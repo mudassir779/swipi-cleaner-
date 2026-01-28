@@ -60,16 +60,6 @@ class AppDrawer extends ConsumerWidget {
                   ),
                   _buildDrawerItem(
                     context,
-                    icon: Icons.restore_from_trash,
-                    title: 'Recently Deleted',
-                    subtitle: '30-day recovery',
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/recently-deleted');
-                    },
-                  ),
-                  _buildDrawerItem(
-                    context,
                     icon: Icons.storage,
                     title: 'Storage Stats',
                     subtitle: 'View usage breakdown',

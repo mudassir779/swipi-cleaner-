@@ -220,7 +220,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (mounted) {
       if (status == PermissionStatus.granted || status == PermissionStatus.limited) {
         // Permission granted, go to home
-        context.go('/home');
+        context.go('/photos');
       } else {
         // Permission denied, show dialog
         showDialog(
@@ -235,7 +235,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  context.go('/home');
+                  context.go('/photos');
                 },
                 child: const Text('Skip for Now'),
               ),
@@ -248,7 +248,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   }
                   if (context.mounted) {
                     Navigator.pop(context);
-                    context.go('/home');
+                    context.go('/photos');
                   }
                 },
                 child: const Text('Open Settings'),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -61,12 +60,6 @@ class SettingsScreen extends ConsumerWidget {
               );
             },
           ),
-          _buildListTile(
-            icon: Icons.delete_sweep,
-            title: 'Recently Deleted',
-            subtitle: 'View and restore deleted photos',
-            onTap: () => context.push('/recently-deleted'),
-          ),
 
           const Divider(height: 1),
 
@@ -121,48 +114,66 @@ class SettingsScreen extends ConsumerWidget {
           _buildListTile(
             icon: Icons.info_outline,
             title: 'About',
-            subtitle: 'Version 1.0.0',
+            subtitle: 'Learn more about Clean Gallery',
             onTap: () {
-              showAboutDialog(
+              showDialog(
                 context: context,
-                applicationName: 'Clean Gallery',
-                applicationVersion: '1.0.0',
-                applicationIcon: Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(16),
+                builder: (context) => AlertDialog(
+                  title: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.photo_library,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text('Clean Gallery'),
+                    ],
                   ),
-                  child: const Icon(
-                    Icons.photo_library,
-                    color: Colors.white,
-                    size: 32,
-                  ),
-                ),
-                children: [
-                  const Text(
+                  content: const Text(
                     'A modern photo cleanup app to help you organize and free up storage space.',
                   ),
-                ],
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ),
               );
             },
           ),
           _buildListTile(
             icon: Icons.privacy_tip_outlined,
             title: 'Privacy Policy',
+            subtitle: 'We do not collect or store your data',
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Privacy policy coming soon')),
-              );
-            },
-          ),
-          _buildListTile(
-            icon: Icons.description_outlined,
-            title: 'Terms of Service',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Terms of service coming soon')),
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Privacy Policy'),
+                  content: const Text(
+                    'Clean Gallery respects your privacy.\n\n'
+                    '• We do not collect any personal data\n'
+                    '• We do not store your photos on our servers\n'
+                    '• All photo processing happens locally on your device\n'
+                    '• Your photos remain private and secure',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ),
               );
             },
           ),
@@ -176,24 +187,6 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
 
-          const SizedBox(height: 32),
-
-          // App info
-          Center(
-            child: Text(
-              'Made with Flutter 💙',
-              style: AppTextStyles.bodySmall,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: Text(
-              'Clean Gallery v1.0.0',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.sectionHeader,
-              ),
-            ),
-          ),
           const SizedBox(height: 32),
         ],
       ),

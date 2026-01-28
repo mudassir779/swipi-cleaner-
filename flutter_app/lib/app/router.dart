@@ -1,22 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:photo_manager/photo_manager.dart';
-import '../features/home/presentation/home_screen.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/photos/presentation/photos_screen.dart';
 import '../features/photos/presentation/screens/confirm_delete_screen.dart';
 import '../features/photos/presentation/screens/photo_details_screen.dart';
-import '../features/photos/presentation/screens/recently_deleted_screen.dart';
 import '../features/photos/presentation/screens/swipe_review_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/duplicates/presentation/duplicates_screen.dart';
 import '../features/storage/presentation/storage_stats_screen.dart';
-import 'main_scaffold.dart';
 
 /// App routing configuration using GoRouter
 class AppRouter {
   static final GoRouter router = GoRouter(
-    initialLocation: '/home',
+    initialLocation: '/photos',
     routes: [
       // Onboarding
       GoRoute(
@@ -25,32 +22,14 @@ class AppRouter {
         builder: (context, state) => const OnboardingScreen(),
       ),
 
-      // Shell route for bottom navigation
-      ShellRoute(
-        builder: (context, state, child) {
-          return MainScaffold(child: child);
-        },
-        routes: [
-          GoRoute(
-            path: '/home',
-            name: 'home',
-            pageBuilder: (context, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const HomeScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/photos',
-            name: 'photos',
-            pageBuilder: (context, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const PhotosScreen(),
-            ),
-          ),
-        ],
+      // Main screen - Month list
+      GoRoute(
+        path: '/photos',
+        name: 'photos',
+        builder: (context, state) => const PhotosScreen(),
       ),
 
-      // Modal routes (full-screen)
+      // Full-screen modal routes
       GoRoute(
         path: '/swipe-review',
         name: 'swipe-review',
@@ -70,11 +49,6 @@ class AppRouter {
         path: '/confirm-delete',
         name: 'confirm-delete',
         builder: (context, state) => const ConfirmDeleteScreen(),
-      ),
-      GoRoute(
-        path: '/recently-deleted',
-        name: 'recently-deleted',
-        builder: (context, state) => const RecentlyDeletedScreen(),
       ),
       GoRoute(
         path: '/settings',
