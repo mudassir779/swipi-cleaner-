@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -108,26 +109,48 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
           ),
         ),
         data: (photos) {
+          // EARLY RETURN if no photos - prevents CardSwiper crash
           if (photos.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.photo_library_outlined,
                     size: 64,
                     color: AppColors.textSecondary,
                   ),
-                  SizedBox(height: 16),
-                  Text(
+                  const SizedBox(height: 16),
+                  const Text(
                     'No Photos to Review',
                     style: AppTextStyles.title,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Try a different month or date range',
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: const Text('Go Back'),
                   ),
                 ],
               ),
             );
           }
 
+          // Only build CardSwiper if we have photos
           final deleteQueue = ref.watch(deleteQueueProvider);
 
           return Stack(
@@ -144,9 +167,7 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: LinearProgressIndicator(
-                              value: photos.isEmpty
-                                  ? 0
-                                  : (_currentIndex + 1) / photos.length,
+                              value: (_currentIndex + 1) / photos.length,
                               minHeight: 6,
                               backgroundColor: AppColors.cardBackground,
                               valueColor: const AlwaysStoppedAnimation<Color>(
@@ -171,12 +192,16 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
                     child: CardSwiper(
                       controller: _controller,
                       cardsCount: photos.length,
+                      numberOfCardsDisplayed: photos.length >= 2 ? 2 : 1,
                       onSwipe: (previousIndex, currentIndex, direction) {
                         final photo = photos[previousIndex];
 
-                        // Swipe left = delete, right = keep
+                        // Add haptic feedback based on swipe direction
                         if (direction == CardSwiperDirection.left) {
+                          HapticFeedback.mediumImpact(); // Medium vibration for delete
                           ref.read(deleteQueueProvider.notifier).add(photo.id);
+                        } else if (direction == CardSwiperDirection.right) {
+                          HapticFeedback.lightImpact(); // Light vibration for keep
                         }
 
                         setState(() {
@@ -369,18 +394,19 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
         if (swipeProgress < -0.1)
           Positioned.fill(
             child: AnimatedOpacity(
-              opacity: swipeProgress.abs(),
-              duration: Duration.zero,
+              opacity: (swipeProgress.abs() * 1.2).clamp(0.0, 1.0), // Faster fade-in
+              duration: const Duration(milliseconds: 100),
+              curve: Curves.easeOut,
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.red.withValues(alpha: 0.5),
+                  color: AppColors.red.withValues(alpha: 0.7), // More visible
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Center(
                   child: Icon(
                     Icons.delete_outline,
                     color: Colors.white,
-                    size: 80,
+                    size: 100, // Bigger icon
                   ),
                 ),
               ),
@@ -391,18 +417,19 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
         if (swipeProgress > 0.1)
           Positioned.fill(
             child: AnimatedOpacity(
-              opacity: swipeProgress.abs(),
-              duration: Duration.zero,
+              opacity: (swipeProgress.abs() * 1.2).clamp(0.0, 1.0), // Faster fade-in
+              duration: const Duration(milliseconds: 100),
+              curve: Curves.easeOut,
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.green.withValues(alpha: 0.5),
+                  color: AppColors.green.withValues(alpha: 0.7), // More visible
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Center(
                   child: Icon(
                     Icons.check_circle_outline,
                     color: Colors.white,
-                    size: 80,
+                    size: 100, // Bigger icon
                   ),
                 ),
               ),
@@ -461,14 +488,7 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
               onClearAll: () {
                 ref.read(deleteQueueProvider.notifier).clear();
                 Navigator.pop(context);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Bin cleared'),
-                      backgroundColor: AppColors.green,
-                    ),
-                  );
-                }
+                // Silent operation - bubble disappears automatically
               },
               onDeleteNow: () {
                 Navigator.pop(context); // Close bottom sheet

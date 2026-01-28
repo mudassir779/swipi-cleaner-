@@ -112,3 +112,39 @@ final filteredPhotosProvider = FutureProvider<List<Photo>>((ref) async {
 
   return filtered;
 });
+
+/// All photos provider - loads ALL photos in batches for accurate stats
+/// WARNING: This can be slow for large libraries, use sparingly
+final allPhotosProvider = FutureProvider<List<Photo>>((ref) async {
+  final service = ref.read(photoServiceProvider);
+  final hasPermission = await service.hasPermission();
+
+  if (!hasPermission) return [];
+
+  // Get total count first
+  final totalCount = await service.getPhotoCount();
+
+  // Load all photos in batches of 100
+  List<Photo> allPhotos = [];
+  int page = 0;
+  const pageSize = 100;
+
+  while (allPhotos.length < totalCount) {
+    final assets = await service.getAllPhotos(page: page, size: pageSize);
+
+    if (assets.isEmpty) break; // No more photos
+
+    // Convert AssetEntity to Photo model
+    final photos = await Future.wait(
+      assets.map((asset) => Photo.fromAsset(asset)),
+    );
+
+    allPhotos.addAll(photos);
+    page++;
+
+    // Safety check - prevent infinite loop
+    if (page > 1000) break; // Max 100,000 photos
+  }
+
+  return allPhotos;
+});

@@ -11,7 +11,7 @@ class StorageStatsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final photosAsync = ref.watch(photosProvider(0));
+    final photosAsync = ref.watch(allPhotosProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -32,9 +32,26 @@ class StorageStatsScreen extends ConsumerWidget {
         ),
       ),
       body: photosAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(
-            color: AppColors.primary,
+        loading: () => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(color: AppColors.primary),
+              const SizedBox(height: 16),
+              Text(
+                'Analyzing photo library...',
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This may take a moment',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary.withOpacity(0.7),
+                ),
+              ),
+            ],
           ),
         ),
         error: (error, stack) => Center(

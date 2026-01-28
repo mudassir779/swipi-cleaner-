@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_manager/photo_manager.dart';
+import '../services/deleted_photos_storage.dart';
 
 /// Recently deleted photo item
 class DeletedPhoto {
@@ -32,12 +34,40 @@ final recentlyDeletedProvider =
 });
 
 class RecentlyDeletedNotifier extends StateNotifier<List<DeletedPhoto>> {
+  final DeletedPhotosStorage _storage = DeletedPhotosStorage();
+  Timer? _cleanupTimer;
+
   RecentlyDeletedNotifier() : super([]) {
-    _cleanupExpired();
+    _loadFromStorage();
+    _setupAutoCleanup();
+  }
+
+  /// Load deleted items from storage on initialization
+  Future<void> _loadFromStorage() async {
+    final items = await _storage.loadDeletedItems();
+    // Note: We can't restore AssetEntity from storage, so this is just for metadata tracking
+    // The actual photos are already deleted from the device
+    // We keep the metadata to show "X days ago" in UI if needed
+  }
+
+  /// Setup automatic cleanup every hour
+  void _setupAutoCleanup() {
+    _cleanupTimer = Timer.periodic(const Duration(hours: 1), (_) {
+      _cleanupExpired();
+    });
+  }
+
+  /// Save current state to storage
+  Future<void> _saveToStorage() async {
+    final data = state.map((item) => DeletedPhotoData(
+      id: item.id,
+      deletedAt: item.deletedAt,
+    )).toList();
+    await _storage.saveDeletedItems(data);
   }
 
   /// Add photo to recently deleted
-  void add(String id, AssetEntity asset) {
+  Future<void> add(String id, AssetEntity asset) async {
     state = [
       ...state.where((item) => item.id != id),
       DeletedPhoto(
@@ -46,10 +76,11 @@ class RecentlyDeletedNotifier extends StateNotifier<List<DeletedPhoto>> {
         asset: asset,
       ),
     ];
+    await _saveToStorage();
   }
 
   /// Add multiple photos
-  void addAll(List<MapEntry<String, AssetEntity>> items) {
+  Future<void> addAll(List<MapEntry<String, AssetEntity>> items) async {
     final newItems = items.map((entry) => DeletedPhoto(
       id: entry.key,
       deletedAt: DateTime.now(),
@@ -61,28 +92,43 @@ class RecentlyDeletedNotifier extends StateNotifier<List<DeletedPhoto>> {
       ...state.where((item) => !existingIds.contains(item.id)),
       ...newItems,
     ];
+    await _saveToStorage();
   }
 
   /// Remove from recently deleted
-  void remove(String id) {
+  Future<void> remove(String id) async {
     state = state.where((item) => item.id != id).toList();
+    await _saveToStorage();
   }
 
   /// Restore photo (remove from recently deleted)
-  void restore(String id) {
-    remove(id);
+  Future<void> restore(String id) async {
+    await remove(id);
   }
 
   /// Clear all
-  void clear() {
+  Future<void> clear() async {
     state = [];
+    await _storage.clearAll();
   }
 
   /// Clean up expired items (older than 30 days)
-  void _cleanupExpired() {
+  Future<void> _cleanupExpired() async {
+    final oldLength = state.length;
     state = state.where((item) => !item.isExpired).toList();
+
+    // Only save if something changed
+    if (state.length != oldLength) {
+      await _saveToStorage();
+    }
   }
 
   /// Get count
   int get count => state.length;
+
+  @override
+  void dispose() {
+    _cleanupTimer?.cancel();
+    super.dispose();
+  }
 }

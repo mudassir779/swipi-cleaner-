@@ -6,6 +6,7 @@ import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/services/photo_service.dart';
+import '../../../../shared/providers/recently_deleted_provider.dart';
 import '../../domain/providers/delete_queue_provider.dart';
 import '../../domain/providers/photo_provider.dart';
 
@@ -260,7 +261,14 @@ class _ConfirmDeleteScreenState extends ConsumerState<ConfirmDeleteScreen> {
       final photoService = PhotoService();
       final assets = photosToDelete.map((p) => p.asset as AssetEntity).toList();
 
-      // Delete from photo library
+      // ADD TO RECENTLY DELETED FIRST (before actual deletion)
+      final deletedItems = photosToDelete.map((photo) => MapEntry(
+        photo.id as String,
+        photo.asset as AssetEntity,
+      )).toList();
+      await ref.read(recentlyDeletedProvider.notifier).addAll(deletedItems);
+
+      // THEN DELETE FROM DEVICE
       await photoService.deleteAssets(assets);
 
       // Clear delete queue
@@ -270,15 +278,7 @@ class _ConfirmDeleteScreenState extends ConsumerState<ConfirmDeleteScreen> {
       ref.invalidate(filteredPhotosProvider);
 
       if (mounted) {
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${photosToDelete.length} ${photosToDelete.length == 1 ? 'photo' : 'photos'} deleted'),
-            backgroundColor: AppColors.green,
-          ),
-        );
-
-        // Navigate to success screen or back
+        // Silent operation - navigate back without snackbar
         context.go('/home');
       }
     } catch (e) {

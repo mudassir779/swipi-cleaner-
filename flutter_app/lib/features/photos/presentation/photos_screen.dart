@@ -254,14 +254,30 @@ class PhotosScreen extends ConsumerWidget {
 
   /// Month band widget
   Widget _buildMonthBand(BuildContext context, monthGroup, int index) {
+    final isEmpty = monthGroup.photoCount == 0;
+
     return InkWell(
       onTap: () {
+        // Check if month is empty before navigating
+        if (isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('No photos in ${monthGroup.displayName}'),
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: AppColors.textSecondary,
+            ),
+          );
+          return; // Don't navigate
+        }
         context.go('/swipe-review?month=${monthGroup.monthKey}');
       },
       child: Container(
         height: 72,
         decoration: BoxDecoration(
-          color: monthGroup.getBackgroundColor(index),
+          color: isEmpty
+              ? AppColors.cardBackground.withOpacity(0.5)
+              : monthGroup.getBackgroundColor(index),
           border: const Border(
             bottom: BorderSide(
               color: AppColors.divider,
@@ -272,31 +288,37 @@ class PhotosScreen extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           children: [
-            // Blue dot indicator
+            // Blue dot indicator (grayed out for empty months)
             Container(
               width: 8,
               height: 8,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
+              decoration: BoxDecoration(
+                color: isEmpty
+                    ? AppColors.textSecondary.withOpacity(0.3)
+                    : AppColors.primary,
                 shape: BoxShape.circle,
               ),
             ),
             const SizedBox(width: 16),
-            // Month name
+            // Month name (grayed out for empty months)
             Text(
               monthGroup.displayName,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
+              style: TextStyle(
+                color: isEmpty
+                    ? AppColors.textSecondary.withOpacity(0.5)
+                    : AppColors.textPrimary,
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const Spacer(),
-            // Photo count
+            // Photo count (grayed out for empty months)
             Text(
               '${monthGroup.photoCount} photos',
-              style: const TextStyle(
-                color: AppColors.textSecondary,
+              style: TextStyle(
+                color: isEmpty
+                    ? AppColors.textSecondary.withOpacity(0.5)
+                    : AppColors.textSecondary,
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
               ),
