@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 /// Quick action card widget
 class QuickActionCard extends StatelessWidget {
   final String title;
   final String subtitle;
-  final List<Color> gradient;
   final IconData icon;
   final VoidCallback onTap;
 
@@ -13,31 +13,19 @@ class QuickActionCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.subtitle,
-    required this.gradient,
     required this.icon,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 4,
-      shadowColor: Colors.black.withValues(alpha: 0.3),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+    return Material(
+      color: AppColors.primary,
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: gradient,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-          ),
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,7 +36,6 @@ class QuickActionCard extends StatelessWidget {
                 color: Colors.white,
                 size: 32,
               ),
-              const SizedBox(height: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -57,13 +44,14 @@ class QuickActionCard extends StatelessWidget {
                     style: AppTextStyles.cardTitle.copyWith(
                       color: Colors.white,
                       fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
                     style: AppTextStyles.cardSubtitle.copyWith(
-                      color: Colors.white.withValues(alpha: 0.8),
+                      color: Colors.white.withOpacity(0.8),
                       fontSize: 12,
                     ),
                   ),

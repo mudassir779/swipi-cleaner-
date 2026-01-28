@@ -9,9 +9,8 @@ import '../features/photos/presentation/screens/photo_details_screen.dart';
 import '../features/photos/presentation/screens/recently_deleted_screen.dart';
 import '../features/photos/presentation/screens/swipe_review_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
-import '../features/tools/presentation/screens/duplicates_screen.dart';
-import '../features/tools/presentation/screens/smart_collections_screen.dart';
-import '../features/tools/presentation/tools_screen.dart';
+import '../features/duplicates/presentation/duplicates_screen.dart';
+import '../features/storage/presentation/storage_stats_screen.dart';
 import 'main_scaffold.dart';
 
 /// App routing configuration using GoRouter
@@ -48,14 +47,6 @@ class AppRouter {
               child: const PhotosScreen(),
             ),
           ),
-          GoRoute(
-            path: '/tools',
-            name: 'tools',
-            pageBuilder: (context, state) => NoTransitionPage(
-              key: state.pageKey,
-              child: const ToolsScreen(),
-            ),
-          ),
         ],
       ),
 
@@ -71,9 +62,9 @@ class AppRouter {
         builder: (context, state) => const DuplicatesScreen(),
       ),
       GoRoute(
-        path: '/smart-collections',
-        name: 'smart-collections',
-        builder: (context, state) => const SmartCollectionsScreen(),
+        path: '/storage-stats',
+        name: 'storage-stats',
+        builder: (context, state) => const StorageStatsScreen(),
       ),
       GoRoute(
         path: '/confirm-delete',

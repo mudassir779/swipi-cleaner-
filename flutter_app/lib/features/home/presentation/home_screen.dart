@@ -19,10 +19,19 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Clean Gallery'),
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        title: const Text(
+          'Clean Gallery',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
+            icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary),
             onPressed: () {
               context.push('/settings');
             },
@@ -30,6 +39,7 @@ class HomeScreen extends ConsumerWidget {
         ],
       ),
       body: RefreshIndicator(
+        color: AppColors.primary,
         onRefresh: () async {
           ref.invalidate(homeStatsProvider);
         },
@@ -40,14 +50,19 @@ class HomeScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-              const Text(
+              Text(
                 'Dashboard',
-                style: AppTextStyles.title,
+                style: AppTextStyles.title.copyWith(
+                  fontSize: 24,
+                  color: AppColors.textPrimary,
+                ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Quick overview of your photo library',
-                style: AppTextStyles.subtitle,
+                style: AppTextStyles.subtitle.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -76,7 +91,7 @@ class HomeScreen extends ConsumerWidget {
                             label: 'Photos',
                             value: stats.totalPhotos.toString(),
                             icon: Icons.photo_library,
-                            backgroundColor: AppColors.statsPhotos,
+                            iconColor: AppColors.primary,
                             onTap: () => context.go('/photos'),
                           ),
                         ),
@@ -86,7 +101,7 @@ class HomeScreen extends ConsumerWidget {
                             label: 'Videos',
                             value: stats.totalVideos.toString(),
                             icon: Icons.video_library,
-                            backgroundColor: AppColors.statsVideos,
+                            iconColor: AppColors.purple,
                             onTap: () => context.go('/photos'),
                           ),
                         ),
@@ -100,7 +115,7 @@ class HomeScreen extends ConsumerWidget {
                             label: 'Today',
                             value: stats.todayPhotos.toString(),
                             icon: Icons.today,
-                            backgroundColor: AppColors.statsToday,
+                            iconColor: AppColors.green,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -109,14 +124,10 @@ class HomeScreen extends ConsumerWidget {
                             label: 'To Delete',
                             value: stats.deleteQueueCount.toString(),
                             icon: Icons.delete_outline,
-                            backgroundColor: AppColors.statsToDelete,
+                            iconColor: AppColors.error,
                             onTap: stats.deleteQueueCount > 0
                                 ? () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Delete queue coming soon'),
-                                      ),
-                                    );
+                                    context.go('/confirm-delete');
                                   }
                                 : null,
                           ),
@@ -130,9 +141,12 @@ class HomeScreen extends ConsumerWidget {
               const SizedBox(height: 32),
 
               // Quick Actions Header
-              const Text(
-                'QUICK ACTIONS',
-                style: AppTextStyles.sectionHeader,
+              Text(
+                'Quick Actions',
+                style: AppTextStyles.title.copyWith(
+                  fontSize: 18,
+                  color: AppColors.textPrimary,
+                ),
               ),
               const SizedBox(height: 16),
 

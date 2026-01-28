@@ -27,25 +27,16 @@ class MainScaffold extends StatelessWidget {
       selectedIndex = 0;
     } else if (location.startsWith('/photos')) {
       selectedIndex = 1;
-    } else if (location.startsWith('/tools')) {
-      selectedIndex = 2;
     }
 
     return Container(
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
-            color: AppColors.border,
+            color: AppColors.divider,
             width: 1,
           ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
       ),
       child: NavigationBar(
         selectedIndex: selectedIndex,
@@ -57,29 +48,21 @@ class MainScaffold extends StatelessWidget {
             case 1:
               context.go('/photos');
               break;
-            case 2:
-              context.go('/tools');
-              break;
           }
         },
         backgroundColor: AppColors.surface,
-        indicatorColor: AppColors.primary.withValues(alpha: 0.2),
-        height: 70,
+        indicatorColor: AppColors.primary.withValues(alpha: 0.15),
+        height: 64,
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
+            icon: Icon(Icons.home_outlined, color: AppColors.textSecondary),
+            selectedIcon: Icon(Icons.home, color: AppColors.primary),
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.photo_library_outlined),
-            selectedIcon: Icon(Icons.photo_library),
+            icon: Icon(Icons.photo_library_outlined, color: AppColors.textSecondary),
+            selectedIcon: Icon(Icons.photo_library, color: AppColors.primary),
             label: 'Photos',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.auto_fix_high_outlined),
-            selectedIcon: Icon(Icons.auto_fix_high),
-            label: 'Tools',
           ),
         ],
       ),

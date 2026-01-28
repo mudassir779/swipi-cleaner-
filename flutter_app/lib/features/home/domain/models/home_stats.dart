@@ -41,14 +41,12 @@ class HomeStats {
 class QuickAction {
   final String title;
   final String subtitle;
-  final List<Color> gradient;
   final IconData icon;
   final String route;
 
   const QuickAction({
     required this.title,
     required this.subtitle,
-    required this.gradient,
     required this.icon,
     required this.route,
   });

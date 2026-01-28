@@ -66,30 +66,26 @@ final quickActionsProvider = Provider<List<QuickAction>>((ref) {
     QuickAction(
       title: 'Swipe Review',
       subtitle: 'Quick photo cleanup',
-      gradient: AppColors.gradientTeal,
       icon: Icons.swipe,
       route: '/swipe-review',
     ),
     QuickAction(
       title: 'Find Duplicates',
       subtitle: 'Remove similar photos',
-      gradient: AppColors.gradientPurple,
       icon: Icons.content_copy,
       route: '/duplicates',
     ),
     QuickAction(
-      title: 'Smart Collections',
-      subtitle: 'Auto-categorized photos',
-      gradient: AppColors.gradientBlue,
-      icon: Icons.auto_awesome,
-      route: '/smart-collections',
+      title: 'Storage Stats',
+      subtitle: 'View usage breakdown',
+      icon: Icons.storage,
+      route: '/storage-stats',
     ),
     QuickAction(
-      title: 'Compress Photos',
-      subtitle: 'Reduce file sizes',
-      gradient: AppColors.gradientOrange,
-      icon: Icons.compress,
-      route: '/compress',
+      title: 'Recently Deleted',
+      subtitle: '30-day recovery',
+      icon: Icons.restore_from_trash,
+      route: '/recently-deleted',
     ),
   ];
 });

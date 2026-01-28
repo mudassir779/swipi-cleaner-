@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 
 /// App color scheme matching the React Native design
 class AppColors {
-  // Base colors
-  static const Color background = Color(0xFF000000);
-  static const Color surface = Color(0xFF1A1A1A);
-  static const Color surfaceLight = Color(0xFF2A2A2A);
+  // Base colors (Clean minimal design)
+  static const Color background = Color(0xFFFFFFFF); // White
+  static const Color surface = Color(0xFFFFFFFF); // White
+  static const Color cardBackground = Color(0xFFF9FAFB); // Soft Gray
 
   // Text colors
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF9CA3AF);
+  static const Color textPrimary = Color(0xFF111827); // Primary Text
+  static const Color textSecondary = Color(0xFF6B7280); // Secondary Text
   static const Color sectionHeader = Color(0xFF6B7280);
 
   // Border colors
-  static const Color border = Color(0xFF1F1F1F);
-  static const Color borderLight = Color(0xFF333333);
+  static const Color divider = Color(0xFFE5E7EB); // Divider Gray
+  static const Color border = Color(0xFFE5E7EB);
+  static const Color borderLight = Color(0xFFE5E7EB);
 
   // Accent colors
   static const Color primary = Color(0xFF3B82F6);
