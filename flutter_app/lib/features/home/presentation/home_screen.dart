@@ -75,10 +75,33 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ),
                 error: (error, stack) => Center(
-                  child: Text(
-                    'Error loading stats: $error',
-                    style: AppTextStyles.body.copyWith(
-                      color: AppColors.red,
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: AppColors.red,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Unable to Load Statistics',
+                          style: AppTextStyles.title.copyWith(
+                            color: AppColors.textPrimary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Please check permissions and try again.',
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -127,7 +150,7 @@ class HomeScreen extends ConsumerWidget {
                             iconColor: AppColors.error,
                             onTap: stats.deleteQueueCount > 0
                                 ? () {
-                                    context.go('/confirm-delete');
+                                    context.push('/confirm-delete');
                                   }
                                 : null,
                           ),

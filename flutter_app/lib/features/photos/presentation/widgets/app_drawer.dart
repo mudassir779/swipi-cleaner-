@@ -55,7 +55,7 @@ class AppDrawer extends ConsumerWidget {
                     subtitle: 'Remove similar photos',
                     onTap: () {
                       Navigator.pop(context);
-                      context.go('/duplicates');
+                      context.push('/duplicates');
                     },
                   ),
                   _buildDrawerItem(
@@ -65,7 +65,7 @@ class AppDrawer extends ConsumerWidget {
                     subtitle: '30-day recovery',
                     onTap: () {
                       Navigator.pop(context);
-                      context.go('/recently-deleted');
+                      context.push('/recently-deleted');
                     },
                   ),
                   _buildDrawerItem(
@@ -75,7 +75,7 @@ class AppDrawer extends ConsumerWidget {
                     subtitle: 'View usage breakdown',
                     onTap: () {
                       Navigator.pop(context);
-                      context.go('/storage-stats');
+                      context.push('/storage-stats');
                     },
                   ),
 
@@ -88,7 +88,7 @@ class AppDrawer extends ConsumerWidget {
                     subtitle: 'App preferences',
                     onTap: () {
                       Navigator.pop(context);
-                      context.go('/settings');
+                      context.push('/settings');
                     },
                   ),
                 ],

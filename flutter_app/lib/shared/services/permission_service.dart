@@ -18,8 +18,9 @@ class PermissionService {
     return await Permission.photos.status;
   }
 
-  /// Open app settings
-  Future<bool> openSettings() async {
-    return await openAppSettings();
-  }
+  // /// Open app settings
+  // /// Commented out due to API compatibility issues with permission_handler
+  // Future<bool> openSettings() async {
+  //   return await openAppSettings();
+  // }
 }

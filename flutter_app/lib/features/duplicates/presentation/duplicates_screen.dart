@@ -178,7 +178,7 @@ class DuplicatesScreen extends ConsumerWidget {
                         // Clear selection
                         ref.read(duplicateSelectionProvider.notifier).clear();
                         // Navigate to confirm delete
-                        context.go('/confirm-delete');
+                        context.push('/confirm-delete');
                       },
                       icon: const Icon(Icons.delete_outline),
                       label: const Text('Delete'),

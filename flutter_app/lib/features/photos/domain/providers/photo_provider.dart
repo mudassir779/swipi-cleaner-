@@ -49,13 +49,13 @@ final filteredPhotosProvider = FutureProvider<List<Photo>>((ref) async {
   var filtered = allPhotos;
 
   // Date filter
-  if (filter.datePreset != DateFilterPreset.all) {
-    if (filter.startDate != null && filter.endDate != null) {
-      filtered = filtered.where((photo) {
-        return photo.creationDate.isAfter(filter.startDate!) &&
-            photo.creationDate.isBefore(filter.endDate!);
-      }).toList();
-    }
+  if (filter.datePreset != DateFilterPreset.all &&
+      filter.startDate != null &&
+      filter.endDate != null) {
+    filtered = filtered.where((photo) {
+      return photo.creationDate.isAfter(filter.startDate!) &&
+          photo.creationDate.isBefore(filter.endDate!);
+    }).toList();
   }
 
   // Size filter
@@ -81,10 +81,11 @@ final filteredPhotosProvider = FutureProvider<List<Photo>>((ref) async {
       break;
   }
 
-  // Search query
+  // Search query - filter by filename/title
   if (filter.searchQuery != null && filter.searchQuery!.isNotEmpty) {
     final query = filter.searchQuery!.toLowerCase();
     filtered = filtered.where((photo) {
+      // Photos without titles won't match any search query
       return photo.title?.toLowerCase().contains(query) ?? false;
     }).toList();
   }

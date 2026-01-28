@@ -7,8 +7,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/services/photo_service.dart';
 import '../../../../shared/providers/recently_deleted_provider.dart';
+import '../../../home/domain/providers/home_provider.dart';
 import '../../domain/providers/delete_queue_provider.dart';
 import '../../domain/providers/photo_provider.dart';
+import '../../domain/providers/month_photos_provider.dart';
 
 /// Confirmation screen before permanently deleting photos
 class ConfirmDeleteScreen extends ConsumerStatefulWidget {
@@ -274,8 +276,15 @@ class _ConfirmDeleteScreenState extends ConsumerState<ConfirmDeleteScreen> {
       // Clear delete queue
       ref.read(deleteQueueProvider.notifier).clear();
 
-      // Refresh photo list
+      // Invalidate all photo-related providers to refresh the UI
       ref.invalidate(filteredPhotosProvider);
+      ref.invalidate(photosProvider);
+      ref.invalidate(photoCountProvider);
+      ref.invalidate(monthPhotosProvider);
+      ref.invalidate(recentPhotosProvider);
+      ref.invalidate(randomPhotosProvider);
+      ref.invalidate(todayPhotosProvider);
+      ref.invalidate(homeStatsProvider);
 
       if (mounted) {
         // Silent operation - navigate back without snackbar
@@ -284,8 +293,8 @@ class _ConfirmDeleteScreenState extends ConsumerState<ConfirmDeleteScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error deleting photos: $e'),
+          const SnackBar(
+            content: Text('Unable to delete photos. Please try again.'),
             backgroundColor: AppColors.red,
           ),
         );

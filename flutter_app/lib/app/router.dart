@@ -85,7 +85,18 @@ class AppRouter {
         path: '/photo-details',
         name: 'photo-details',
         pageBuilder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>;
+          final extra = state.extra as Map<String, dynamic>?;
+          if (extra == null || !extra.containsKey('asset') || !extra.containsKey('photoId')) {
+            // Return error page if navigation data is missing
+            return MaterialPage(
+              child: Scaffold(
+                appBar: AppBar(title: const Text('Error')),
+                body: const Center(
+                  child: Text('Invalid photo details'),
+                ),
+              ),
+            );
+          }
           return MaterialPage(
             fullscreenDialog: true,
             child: PhotoDetailsScreen(

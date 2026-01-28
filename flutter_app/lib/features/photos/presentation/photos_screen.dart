@@ -179,7 +179,7 @@ class PhotosScreen extends ConsumerWidget {
                   title: 'Recents',
                   subtitle: '30 days',
                   icon: Icons.access_time,
-                  onTap: () => context.go('/swipe-review?filter=recents'),
+                  onTap: () => context.push('/swipe-review?filter=recents'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -189,7 +189,7 @@ class PhotosScreen extends ConsumerWidget {
                   title: 'Random',
                   subtitle: 'Shuffle',
                   icon: Icons.shuffle,
-                  onTap: () => context.go('/swipe-review?filter=random'),
+                  onTap: () => context.push('/swipe-review?filter=random'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -199,7 +199,7 @@ class PhotosScreen extends ConsumerWidget {
                   title: 'Today',
                   subtitle: DateTime.now().day.toString(),
                   icon: Icons.today,
-                  onTap: () => context.go('/swipe-review?filter=today'),
+                  onTap: () => context.push('/swipe-review?filter=today'),
                 ),
               ),
             ],
@@ -270,7 +270,7 @@ class PhotosScreen extends ConsumerWidget {
           );
           return; // Don't navigate
         }
-        context.go('/swipe-review?month=${monthGroup.monthKey}');
+        context.push('/swipe-review?month=${monthGroup.monthKey}');
       },
       child: Container(
         height: 72,

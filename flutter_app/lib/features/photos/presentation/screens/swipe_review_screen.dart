@@ -97,15 +97,40 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.close, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
       ),
       body: photosAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
-          child: Text(
-            'Error loading photos: $error',
-            style: AppTextStyles.body.copyWith(color: AppColors.red),
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: AppColors.red,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Unable to Load Photos',
+                  style: AppTextStyles.title.copyWith(color: AppColors.textPrimary),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Please check your permissions and try again.',
+                  style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => context.pop(),
+                  child: const Text('Go Back'),
+                ),
+              ],
+            ),
           ),
         ),
         data: (photos) {
@@ -134,7 +159,7 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => context.pop(),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
@@ -205,7 +230,9 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
                         }
 
                         setState(() {
-                          _currentIndex = currentIndex ?? photos.length;
+                          // Clamp currentIndex to valid range [0, photos.length - 1]
+                          // When null (swipe complete), set to last valid index
+                          _currentIndex = (currentIndex ?? photos.length - 1).clamp(0, photos.length - 1);
                         });
 
                         // Check if we've reviewed all photos
@@ -492,7 +519,7 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
               },
               onDeleteNow: () {
                 Navigator.pop(context); // Close bottom sheet
-                context.go('/confirm-delete'); // Navigate to confirmation screen
+                context.push('/confirm-delete'); // Navigate to confirmation screen
               },
             ),
           );
@@ -516,7 +543,7 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Close swipe screen
+              context.pop(); // Close swipe screen
             },
             child: const Text('Done'),
           ),
@@ -524,7 +551,7 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context); // Close dialog
-                context.go('/confirm-delete'); // Navigate to confirmation screen
+                context.push('/confirm-delete'); // Navigate to confirmation screen
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.red,

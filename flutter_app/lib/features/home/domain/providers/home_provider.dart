@@ -33,6 +33,7 @@ final homeStatsProvider = FutureProvider<HomeStats>((ref) async {
   final today = DateTime.now();
   final todayStart = DateTime(today.year, today.month, today.day);
   final todayPhotos = allPhotos.where((photo) {
+    // createDateTime is non-nullable in photo_manager, so no null check needed
     return photo.createDateTime.isAfter(todayStart);
   }).length;
 

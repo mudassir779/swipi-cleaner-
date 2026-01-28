@@ -95,9 +95,15 @@ class SettingsScreen extends ConsumerWidget {
                         child: const Text('Cancel'),
                       ),
                       ElevatedButton(
-                        onPressed: () {
-                          openAppSettings();
-                          Navigator.pop(context);
+                        onPressed: () async {
+                          try {
+                            await openAppSettings();
+                          } catch (e) {
+                            // openAppSettings may not be available
+                          }
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                          }
                         },
                         child: const Text('Open Settings'),
                       ),

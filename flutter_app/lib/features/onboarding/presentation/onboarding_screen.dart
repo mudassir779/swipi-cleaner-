@@ -209,6 +209,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final permissionService = PermissionService();
     final status = await permissionService.requestPhotoPermission();
 
+    // Check if widget is still mounted before continuing
+    if (!mounted) return;
+
     // Mark onboarding as completed
     final storageService = StorageService();
     await storageService.init();
@@ -238,7 +241,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  await permissionService.openAppSettings();
+                  try {
+                    await openAppSettings();
+                  } catch (e) {
+                    // openAppSettings may not be available in some versions
+                  }
                   if (context.mounted) {
                     Navigator.pop(context);
                     context.go('/home');

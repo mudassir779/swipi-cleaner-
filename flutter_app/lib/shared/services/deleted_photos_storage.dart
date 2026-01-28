@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 
 /// Simple model for persisting deleted photo metadata
@@ -44,7 +45,8 @@ class DeletedPhotosStorage {
       await prefs.setString(_key, jsonEncode(jsonList));
     } catch (e) {
       // Fail silently - don't block deletion if storage fails
-      print('Error saving deleted items: $e');
+      // Log error but don't block deletion
+      debugPrint('Error saving deleted items: $e');
     }
   }
 
@@ -66,7 +68,7 @@ class DeletedPhotosStorage {
           .toList();
     } catch (e) {
       // Return empty list if parsing fails
-      print('Error loading deleted items: $e');
+      debugPrint('Error loading deleted items: $e');
       return [];
     }
   }
@@ -77,7 +79,7 @@ class DeletedPhotosStorage {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_key);
     } catch (e) {
-      print('Error clearing deleted items: $e');
+      debugPrint('Error clearing deleted items: $e');
     }
   }
 }

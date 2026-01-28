@@ -15,6 +15,9 @@ class DuplicateGroup {
 
   /// Get the best quality photo (largest file size)
   Photo get bestPhoto {
+    if (photos.isEmpty) {
+      throw StateError('Cannot get best photo from empty duplicate group');
+    }
     return photos.reduce((a, b) =>
       (a.fileSize ?? 0) > (b.fileSize ?? 0) ? a : b
     );
@@ -22,6 +25,7 @@ class DuplicateGroup {
 
   /// Get all photos except the best one
   List<Photo> get duplicates {
+    if (photos.isEmpty) return [];
     final best = bestPhoto;
     return photos.where((p) => p.id != best.id).toList();
   }
