@@ -37,15 +37,26 @@ target 'Runner' do
 end
 
 post_install do |installer|
+  # Configure Pods targets
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
 
-    # Fix for native_assets SdkRoot error
     target.build_configurations.each do |config|
       config.build_settings['SDKROOT'] = 'iphoneos'
-
-      # Disable bitcode (deprecated in Xcode 14+)
       config.build_settings['ENABLE_BITCODE'] = 'NO'
     end
+  end
+
+  # Configure Runner project targets (including native_assets)
+  installer.aggregate_targets.each do |target|
+    target.xcconfigs.each do |config_name, config_file|
+      config_file.attributes['SDKROOT'] = 'iphoneos'
+    end
+  end
+
+  # Also set SDKROOT for the main project
+  project = installer.pods_project
+  project.build_configurations.each do |config|
+    config.build_settings['SDKROOT'] = 'iphoneos'
   end
 end

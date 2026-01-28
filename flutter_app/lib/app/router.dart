@@ -6,9 +6,7 @@ import '../features/photos/presentation/photos_screen.dart';
 import '../features/photos/presentation/screens/confirm_delete_screen.dart';
 import '../features/photos/presentation/screens/photo_details_screen.dart';
 import '../features/photos/presentation/screens/swipe_review_screen.dart';
-import '../features/settings/presentation/settings_screen.dart';
 import '../features/duplicates/presentation/duplicates_screen.dart';
-import '../features/storage/presentation/storage_stats_screen.dart';
 
 /// App routing configuration using GoRouter
 class AppRouter {
@@ -41,19 +39,9 @@ class AppRouter {
         builder: (context, state) => const DuplicatesScreen(),
       ),
       GoRoute(
-        path: '/storage-stats',
-        name: 'storage-stats',
-        builder: (context, state) => const StorageStatsScreen(),
-      ),
-      GoRoute(
         path: '/confirm-delete',
         name: 'confirm-delete',
         builder: (context, state) => const ConfirmDeleteScreen(),
-      ),
-      GoRoute(
-        path: '/settings',
-        name: 'settings',
-        builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: '/photo-details',

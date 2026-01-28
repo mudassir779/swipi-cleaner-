@@ -16,8 +16,8 @@ class AppColors {
   static const Color border = Color(0xFFE5E7EB);
   static const Color borderLight = Color(0xFFE5E7EB);
 
-  // Accent colors (iOS system colors)
-  static const Color primary = Color(0xFF007AFF); // iOS blue
+  // Accent colors (Coral for unique personality)
+  static const Color primary = Color(0xFFFF6B6B); // Coral/Salmon
   static const Color green = Color(0xFF34C759); // iOS green
   static const Color red = Color(0xFFFF3B30); // iOS red
   static const Color error = Color(0xFFFF3B30); // iOS red
@@ -26,8 +26,8 @@ class AppColors {
   static const Color gray = Color(0xFF6B7280); // Same as textSecondary
   static const Color sectionHeader = Color(0xFF6B7280); // Same as textSecondary
   static const Color surfaceLight = Color(0xFFF9FAFB); // Same as surface
-  static const Color teal = Color(0xFF007AFF); // Now maps to primary blue
-  static const Color pink = Color(0xFF007AFF); // Now maps to primary blue
+  static const Color teal = Color(0xFFFF6B6B); // Now maps to primary coral
+  static const Color pink = Color(0xFFFF6B6B); // Now maps to primary coral
 
   // Legacy gradients (now use minimal colors)
   static const List<Color> gradientRed = [red, red];

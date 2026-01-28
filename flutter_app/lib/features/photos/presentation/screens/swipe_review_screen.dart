@@ -27,6 +27,23 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
   int _currentIndex = 0;
 
   @override
+  void initState() {
+    super.initState();
+
+    // Get start index from query params for tap-to-swipe navigation
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final uri = GoRouterState.of(context).uri;
+      final startParam = uri.queryParameters['start'];
+      if (startParam != null) {
+        final startIndex = int.tryParse(startParam) ?? 0;
+        setState(() => _currentIndex = startIndex);
+        // Note: CardSwiper doesn't support initialIndex, so we start from 0
+        // This will be enhanced when implementing photo grid navigation
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
@@ -108,26 +125,41 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.error_outline,
-                  size: 64,
-                  color: AppColors.red,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Unable to Load Photos',
-                  style: AppTextStyles.title.copyWith(color: AppColors.textPrimary),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Please check your permissions and try again.',
-                  style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
-                  textAlign: TextAlign.center,
+                  size: 80,
+                  color: AppColors.red.withValues(alpha: 0.5),
                 ),
                 const SizedBox(height: 24),
+                const Text(
+                  'Oops!',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'We couldn\'t load your photos.\nPlease check your permissions and try again.',
+                  style: TextStyle(
+                    fontSize: 17,
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: () => context.pop(),
-                  child: const Text('Go Back'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                  ),
+                  child: const Text('Back to Photos'),
                 ),
               ],
             ),
@@ -140,24 +172,29 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.photo_library_outlined,
-                    size: 64,
-                    color: AppColors.textSecondary,
+                    size: 80,
+                    color: AppColors.primary.withValues(alpha: 0.3),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   const Text(
-                    'No Photos to Review',
-                    style: AppTextStyles.title,
+                    'All clean! 🎉',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Try a different month or date range',
-                    style: AppTextStyles.subtitle.copyWith(
+                  const Text(
+                    'Pick another month to keep cleaning',
+                    style: TextStyle(
+                      fontSize: 17,
                       color: AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
                   ElevatedButton(
                     onPressed: () => context.pop(),
                     style: ElevatedButton.styleFrom(
@@ -165,10 +202,10 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 32,
-                        vertical: 12,
+                        vertical: 16,
                       ),
                     ),
-                    child: const Text('Go Back'),
+                    child: const Text('Back to Photos'),
                   ),
                 ],
               ),
@@ -249,47 +286,8 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
                     ),
                   ),
 
-                  // Action buttons
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        // Keep button
-                        _buildActionButton(
-                          icon: Icons.check_circle_outline,
-                          label: 'Keep',
-                          color: AppColors.green,
-                          onPressed: () {
-                            _controller.swipe(CardSwiperDirection.right);
-                          },
-                        ),
-
-                        // Undo button
-                        _buildActionButton(
-                          icon: Icons.undo,
-                          label: 'Undo',
-                          color: AppColors.gray,
-                          onPressed: () {
-                            _controller.undo();
-                            if (_currentIndex > 0) {
-                              setState(() => _currentIndex--);
-                            }
-                          },
-                        ),
-
-                        // Delete button
-                        _buildActionButton(
-                          icon: Icons.delete_outline,
-                          label: 'Delete',
-                          color: AppColors.red,
-                          onPressed: () {
-                            _controller.swipe(CardSwiperDirection.left);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
+                  // Gesture-only - no action buttons for cleaner experience
+                  const SizedBox(height: 24),
                 ],
               ),
 
@@ -421,19 +419,28 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
         if (swipeProgress < -0.1)
           Positioned.fill(
             child: AnimatedOpacity(
-              opacity: (swipeProgress.abs() * 1.2).clamp(0.0, 1.0),
-              duration: const Duration(milliseconds: 150), // Smoother
-              curve: Curves.easeOutCubic, // Apple-style curve
+              opacity: (swipeProgress.abs() * 1.3).clamp(0.0, 1.0),
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOutCubic,
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.red.withValues(alpha: 0.7),
+                  color: AppColors.red.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Center(
-                  child: Icon(
-                    Icons.delete_outline,
-                    color: Colors.white,
-                    size: 100,
+                child: Center(
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 1.0, end: swipeProgress.abs() > 0.3 ? 1.1 : 1.0),
+                    duration: const Duration(milliseconds: 100),
+                    builder: (context, scale, child) {
+                      return Transform.scale(
+                        scale: scale,
+                        child: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.white,
+                          size: 120,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -444,19 +451,28 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
         if (swipeProgress > 0.1)
           Positioned.fill(
             child: AnimatedOpacity(
-              opacity: (swipeProgress.abs() * 1.2).clamp(0.0, 1.0),
-              duration: const Duration(milliseconds: 150), // Smoother
-              curve: Curves.easeOutCubic, // Apple-style curve
+              opacity: (swipeProgress.abs() * 1.3).clamp(0.0, 1.0),
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOutCubic,
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.green.withValues(alpha: 0.7),
+                  color: AppColors.green.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Center(
-                  child: Icon(
-                    Icons.check_circle_outline,
-                    color: Colors.white,
-                    size: 100,
+                child: Center(
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 1.0, end: swipeProgress.abs() > 0.3 ? 1.1 : 1.0),
+                    duration: const Duration(milliseconds: 100),
+                    builder: (context, scale, child) {
+                      return Transform.scale(
+                        scale: scale,
+                        child: const Icon(
+                          Icons.check_circle_outline,
+                          color: Colors.white,
+                          size: 120,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -466,31 +482,6 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
     );
   }
 
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onPressed,
-  }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        FloatingActionButton(
-          onPressed: onPressed,
-          backgroundColor: color,
-          heroTag: label,
-          child: Icon(icon, size: 32),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: AppTextStyles.bodySmall.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
 
   /// Show bottom sheet with grid of marked photos
   void _showBinBottomSheet() {
@@ -534,10 +525,24 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Review Complete'),
+        backgroundColor: AppColors.surface,
+        title: const Text(
+          'Great work! 🎉',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: Text(
-          'You\'ve reviewed all photos!\n\n'
-          '${deleteQueue.length} ${deleteQueue.length == 1 ? 'photo' : 'photos'} marked for deletion.',
+          deleteQueue.isEmpty
+              ? 'You\'ve reviewed all photos and kept them all!'
+              : 'You reviewed all the photos!\n\n'
+                  '${deleteQueue.length} ${deleteQueue.length == 1 ? 'photo' : 'photos'} marked for deletion.',
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 17,
+          ),
         ),
         actions: [
           TextButton(
@@ -555,6 +560,7 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.red,
+                foregroundColor: Colors.white,
               ),
               child: const Text('Review & Delete'),
             ),

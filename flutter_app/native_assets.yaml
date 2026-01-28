@@ -1,0 +1,3 @@
+# Disable native assets to avoid SdkRoot error
+# This app doesn't use native assets
+enabled: false

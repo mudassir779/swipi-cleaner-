@@ -46,19 +46,62 @@ class AppDrawer extends ConsumerWidget {
                   const Divider(height: 1, color: AppColors.divider),
                   _buildDrawerItem(
                     context,
-                    title: 'Storage Stats',
+                    title: 'Help & Support',
                     onTap: () {
                       Navigator.pop(context);
-                      context.push('/storage-stats');
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          backgroundColor: AppColors.surface,
+                          title: const Text(
+                            'Help & Support',
+                            style: TextStyle(color: AppColors.textPrimary),
+                          ),
+                          content: const Text(
+                            'Need help? We\'re here for you!\n\n'
+                            'Email: support@swipetoclean.app\n'
+                            'Website: swipetoclean.app',
+                            style: TextStyle(color: AppColors.textSecondary),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        ),
+                      );
                     },
                   ),
                   const Divider(height: 1, color: AppColors.divider),
                   _buildDrawerItem(
                     context,
-                    title: 'Settings',
+                    title: 'About',
                     onTap: () {
                       Navigator.pop(context);
-                      context.push('/settings');
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          backgroundColor: AppColors.surface,
+                          title: const Text(
+                            'About',
+                            style: TextStyle(color: AppColors.textPrimary),
+                          ),
+                          content: const Text(
+                            'Swipe to Clean Storage\n\n'
+                            'The fastest way to clean your photo library.\n\n'
+                            'Version 1.0.0\n'
+                            '© 2026 Swipe to Clean',
+                            style: TextStyle(color: AppColors.textSecondary),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        ),
+                      );
                     },
                   ),
                 ],
