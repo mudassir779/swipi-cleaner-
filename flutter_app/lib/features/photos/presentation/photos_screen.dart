@@ -23,9 +23,10 @@ class PhotosScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
+        toolbarHeight: 60,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: AppColors.textPrimary),
+            icon: const Icon(Icons.menu, color: AppColors.textPrimary, size: 24),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
@@ -33,38 +34,11 @@ class PhotosScreen extends ConsumerWidget {
           'Photos',
           style: TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+            fontSize: 34,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.5,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: AppColors.textSecondary),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Search coming soon')),
-              );
-            },
-          ),
-          IconButton(
-            icon: Badge(
-              isLabelVisible: filter.hasActiveFilters,
-              child: const Icon(Icons.filter_list, color: AppColors.textSecondary),
-            ),
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                builder: (context) => const FilterBottomSheet(),
-                backgroundColor: AppColors.background,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(20),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
       ),
       body: monthGroupsAsync.when(
         loading: () => const Center(
@@ -273,7 +247,7 @@ class PhotosScreen extends ConsumerWidget {
         context.push('/swipe-review?month=${monthGroup.monthKey}');
       },
       child: Container(
-        height: 72,
+        height: 80,
         decoration: BoxDecoration(
           color: isEmpty
               ? AppColors.cardBackground.withOpacity(0.5)
@@ -285,7 +259,7 @@ class PhotosScreen extends ConsumerWidget {
             ),
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         child: Row(
           children: [
             // Blue dot indicator (grayed out for empty months)

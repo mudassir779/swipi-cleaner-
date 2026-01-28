@@ -228,7 +228,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           builder: (context) => AlertDialog(
             title: const Text('Photo Access Required'),
             content: const Text(
-              'Clean Gallery needs access to your photos to function. '
+              'Swipe to Clean Storage needs access to your photos to function. '
               'Please grant permission in Settings.',
             ),
             actions: [

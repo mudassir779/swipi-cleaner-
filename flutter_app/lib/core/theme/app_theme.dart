@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'app_colors.dart';
 
-/// Material Design 3 theme for Clean Gallery app
+/// Material Design 3 theme for Swipe to Clean Storage app
 class AppTheme {
   static ThemeData get darkTheme {
     return ThemeData(

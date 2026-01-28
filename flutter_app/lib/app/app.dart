@@ -9,7 +9,7 @@ class CleanGalleryApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Clean Gallery',
+      title: 'Swipe to Clean Storage',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       routerConfig: AppRouter.router,

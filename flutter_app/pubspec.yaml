@@ -1,5 +1,5 @@
-name: clean_gallery
-description: "Modern photo cleanup app with smart collections and swipe review"
+name: swipe_to_clean_storage
+description: "Swipe to Clean Storage - Free up space by swiping through your photos"
 publish_to: 'none'
 version: 1.0.0
 

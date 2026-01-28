@@ -421,19 +421,19 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
         if (swipeProgress < -0.1)
           Positioned.fill(
             child: AnimatedOpacity(
-              opacity: (swipeProgress.abs() * 1.2).clamp(0.0, 1.0), // Faster fade-in
-              duration: const Duration(milliseconds: 100),
-              curve: Curves.easeOut,
+              opacity: (swipeProgress.abs() * 1.2).clamp(0.0, 1.0),
+              duration: const Duration(milliseconds: 150), // Smoother
+              curve: Curves.easeOutCubic, // Apple-style curve
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.red.withValues(alpha: 0.7), // More visible
+                  color: AppColors.red.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Center(
                   child: Icon(
                     Icons.delete_outline,
                     color: Colors.white,
-                    size: 100, // Bigger icon
+                    size: 100,
                   ),
                 ),
               ),
@@ -444,19 +444,19 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
         if (swipeProgress > 0.1)
           Positioned.fill(
             child: AnimatedOpacity(
-              opacity: (swipeProgress.abs() * 1.2).clamp(0.0, 1.0), // Faster fade-in
-              duration: const Duration(milliseconds: 100),
-              curve: Curves.easeOut,
+              opacity: (swipeProgress.abs() * 1.2).clamp(0.0, 1.0),
+              duration: const Duration(milliseconds: 150), // Smoother
+              curve: Curves.easeOutCubic, // Apple-style curve
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.green.withValues(alpha: 0.7), // More visible
+                  color: AppColors.green.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Center(
                   child: Icon(
                     Icons.check_circle_outline,
                     color: Colors.white,
-                    size: 100, // Bigger icon
+                    size: 100,
                   ),
                 ),
               ),

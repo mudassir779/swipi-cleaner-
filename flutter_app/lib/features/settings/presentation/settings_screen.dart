@@ -34,7 +34,7 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'Clean Gallery User',
+                  'Swipe to Clean Storage User',
                   style: AppTextStyles.cardTitle,
                 ),
                 const SizedBox(height: 4),
@@ -114,7 +114,7 @@ class SettingsScreen extends ConsumerWidget {
           _buildListTile(
             icon: Icons.info_outline,
             title: 'About',
-            subtitle: 'Learn more about Clean Gallery',
+            subtitle: 'Learn more about Swipe to Clean Storage',
             onTap: () {
               showDialog(
                 context: context,
@@ -135,7 +135,7 @@ class SettingsScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Text('Clean Gallery'),
+                      const Text('Swipe to Clean Storage'),
                     ],
                   ),
                   content: const Text(
@@ -161,7 +161,7 @@ class SettingsScreen extends ConsumerWidget {
                 builder: (context) => AlertDialog(
                   title: const Text('Privacy Policy'),
                   content: const Text(
-                    'Clean Gallery respects your privacy.\n\n'
+                    'Swipe to Clean Storage respects your privacy.\n\n'
                     '• We do not collect any personal data\n'
                     '• We do not store your photos on our servers\n'
                     '• All photo processing happens locally on your device\n'

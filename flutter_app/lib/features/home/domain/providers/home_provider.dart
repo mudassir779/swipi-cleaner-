@@ -82,11 +82,5 @@ final quickActionsProvider = Provider<List<QuickAction>>((ref) {
       icon: Icons.storage,
       route: '/storage-stats',
     ),
-    QuickAction(
-      title: 'Recently Deleted',
-      subtitle: '30-day recovery',
-      icon: Icons.restore_from_trash,
-      route: '/recently-deleted',
-    ),
   ];
 });
