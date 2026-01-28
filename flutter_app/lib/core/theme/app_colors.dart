@@ -19,6 +19,8 @@ class AppColors {
 
   // Accent colors
   static const Color primary = Color(0xFF3B82F6);
+  static const Color error = Color(0xFFEF4444); // Delete / Warning Red
+  static const Color surfaceLight = Color(0xFFF9FAFB); // Alias for cardBackground
   static const Color teal = Color(0xFF14B8A6);
   static const Color tealDark = Color(0xFF0D9488);
   static const Color orange = Color(0xFFF97316);

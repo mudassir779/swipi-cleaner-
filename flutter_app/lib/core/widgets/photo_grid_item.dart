@@ -31,7 +31,7 @@ class PhotoGridItem extends StatelessWidget {
             image: AssetEntityImageProvider(
               asset,
               isOriginal: false,
-              thumbnailSize: const ThumbnailSize.square(300),
+              thumbnailSize: ThumbnailSize(300, 300),
             ),
             fit: BoxFit.cover,
           ),

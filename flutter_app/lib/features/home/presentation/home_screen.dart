@@ -166,7 +166,6 @@ class HomeScreen extends ConsumerWidget {
                   return QuickActionCard(
                     title: action.title,
                     subtitle: action.subtitle,
-                    gradient: action.gradient,
                     icon: action.icon,
                     onTap: () {
                       context.push(action.route);

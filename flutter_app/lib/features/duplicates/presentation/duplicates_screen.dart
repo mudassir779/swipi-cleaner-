@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -173,7 +174,7 @@ class DuplicatesScreen extends ConsumerWidget {
                     ElevatedButton.icon(
                       onPressed: () {
                         // Add to delete queue
-                        ref.read(deleteQueueProvider.notifier).addAll(selection);
+                        ref.read(deleteQueueProvider.notifier).addAll(selection.toList());
                         // Clear selection
                         ref.read(duplicateSelectionProvider.notifier).clear();
                         // Navigate to confirm delete
@@ -285,7 +286,7 @@ class DuplicatesScreen extends ConsumerWidget {
                             image: AssetEntityImageProvider(
                               photo.asset,
                               isOriginal: false,
-                              thumbnailSize: const ThumbnailSize.square(200),
+                              thumbnailSize: ThumbnailSize(200, 200),
                             ),
                             fit: BoxFit.cover,
                             width: double.infinity,

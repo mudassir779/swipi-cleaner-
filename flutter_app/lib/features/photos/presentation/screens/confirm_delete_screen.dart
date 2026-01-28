@@ -163,7 +163,7 @@ class _ConfirmDeleteScreenState extends ConsumerState<ConfirmDeleteScreen> {
                             image: AssetEntityImageProvider(
                               photo.asset,
                               isOriginal: false,
-                              thumbnailSize: const ThumbnailSize.square(200),
+                              thumbnailSize: ThumbnailSize(200, 200),
                             ),
                             fit: BoxFit.cover,
                           ),

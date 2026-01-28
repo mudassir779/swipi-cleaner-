@@ -69,7 +69,7 @@ class DuplicateDetector {
     final size = photo.fileSize ?? 0;
 
     // For better duplicate detection, we should:
-    // 1. Get thumbnail bytes: await photo.asset.thumbnailDataWithSize(ThumbnailSize.square(32))
+    // 1. Get thumbnail bytes: await photo.asset.thumbnailDataWithSize(ThumbnailSize(32, 32))
     // 2. Convert to grayscale
     // 3. Resize to 8x8 or 32x32
     // 4. Compute DCT (Discrete Cosine Transform) for pHash
@@ -84,7 +84,7 @@ class DuplicateDetector {
     // Try to get a basic image fingerprint
     try {
       final bytes = await photo.asset.thumbnailDataWithSize(
-        const ThumbnailSize.square(8),
+        ThumbnailSize(8, 8),
       );
       if (bytes != null) {
         // Compute simple average hash

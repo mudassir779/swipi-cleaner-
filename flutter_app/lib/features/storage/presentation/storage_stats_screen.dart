@@ -11,7 +11,7 @@ class StorageStatsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final photosAsync = ref.watch(photosProvider);
+    final photosAsync = ref.watch(photosProvider(0));
 
     return Scaffold(
       backgroundColor: AppColors.background,

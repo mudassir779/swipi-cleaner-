@@ -280,7 +280,7 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
               image: AssetEntityImageProvider(
                 photo.asset,
                 isOriginal: false,
-                thumbnailSize: const ThumbnailSize.square(800),
+                thumbnailSize: ThumbnailSize(800, 800),
               ),
               fit: BoxFit.cover,
             ),
