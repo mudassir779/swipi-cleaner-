@@ -20,6 +20,7 @@ class PhotosScreen extends ConsumerStatefulWidget {
 class _PhotosScreenState extends ConsumerState<PhotosScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _showMonthPickerFAB = true;
+  final Set<String> _expandedMonths = {}; // Track which months are expanded
 
   @override
   void initState() {
@@ -253,22 +254,36 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
     );
   }
 
+  /// Toggle month expansion
+  void _toggleMonth(String monthKey) {
+    setState(() {
+      if (_expandedMonths.contains(monthKey)) {
+        _expandedMonths.remove(monthKey);
+      } else {
+        _expandedMonths.add(monthKey);
+      }
+    });
+  }
+
   /// Build month section with sticky header and photo grid
   List<Widget> _buildMonthSection(BuildContext context, monthGroup, int index) {
     final isEmpty = monthGroup.photoCount == 0;
+    final isExpanded = _expandedMonths.contains(monthGroup.monthKey);
 
     return [
-      // Sticky month header
+      // Sticky month header (tappable to expand/collapse)
       SliverPersistentHeader(
         pinned: true,
         delegate: _MonthHeaderDelegate(
           monthGroup: monthGroup,
           isEmpty: isEmpty,
+          isExpanded: isExpanded,
+          onTap: () => _toggleMonth(monthGroup.monthKey),
         ),
       ),
 
-      // Photo grid for this month
-      if (!isEmpty)
+      // Photo grid for this month (only if expanded)
+      if (!isEmpty && isExpanded)
         SliverPadding(
           padding: const EdgeInsets.all(2),
           sliver: SliverGrid(
@@ -321,10 +336,14 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
 class _MonthHeaderDelegate extends SliverPersistentHeaderDelegate {
   final dynamic monthGroup;
   final bool isEmpty;
+  final bool isExpanded;
+  final VoidCallback onTap;
 
   _MonthHeaderDelegate({
     required this.monthGroup,
     required this.isEmpty,
+    required this.isExpanded,
+    required this.onTap,
   });
 
   @override
@@ -335,53 +354,72 @@ class _MonthHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: AppColors.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          // Coral dot indicator (grayed out for empty months)
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: isEmpty
-                  ? AppColors.textSecondary.withValues(alpha: 0.3)
-                  : AppColors.primary,
-              shape: BoxShape.circle,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        color: AppColors.surface,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            // Coral dot indicator (grayed out for empty months)
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: isEmpty
+                    ? AppColors.textSecondary.withValues(alpha: 0.3)
+                    : AppColors.primary,
+                shape: BoxShape.circle,
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          // Month name
-          Text(
-            monthGroup.displayName,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.5,
-              color: isEmpty
-                  ? AppColors.textSecondary.withValues(alpha: 0.5)
-                  : AppColors.textPrimary,
+            const SizedBox(width: 12),
+            // Month name
+            Text(
+              monthGroup.displayName,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                letterSpacing: -0.5,
+                color: isEmpty
+                    ? AppColors.textSecondary.withValues(alpha: 0.5)
+                    : AppColors.textPrimary,
+              ),
             ),
-          ),
-          const Spacer(),
-          // Photo count
-          Text(
-            '${monthGroup.photoCount} photos',
-            style: TextStyle(
-              fontSize: 15,
-              color: isEmpty
-                  ? AppColors.textSecondary.withValues(alpha: 0.5)
-                  : AppColors.textSecondary,
+            const Spacer(),
+            // Photo count
+            Text(
+              '${monthGroup.photoCount} photos',
+              style: TextStyle(
+                fontSize: 15,
+                color: isEmpty
+                    ? AppColors.textSecondary.withValues(alpha: 0.5)
+                    : AppColors.textSecondary,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            // Chevron icon (rotates based on expanded state)
+            AnimatedRotation(
+              turns: isExpanded ? 0.5 : 0, // 180 degrees when expanded
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              child: Icon(
+                Icons.keyboard_arrow_down,
+                color: isEmpty
+                    ? AppColors.textSecondary.withValues(alpha: 0.5)
+                    : AppColors.textSecondary,
+                size: 24,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   @override
   bool shouldRebuild(_MonthHeaderDelegate oldDelegate) {
-    return monthGroup != oldDelegate.monthGroup || isEmpty != oldDelegate.isEmpty;
+    return monthGroup != oldDelegate.monthGroup ||
+           isEmpty != oldDelegate.isEmpty ||
+           isExpanded != oldDelegate.isExpanded;
   }
 }
