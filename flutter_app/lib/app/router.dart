@@ -1,3 +1,4 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:photo_manager/photo_manager.dart';
@@ -27,22 +28,60 @@ class AppRouter {
         builder: (context, state) => const PhotosScreen(),
       ),
 
-      // Full-screen modal routes
+      // Swipe Review - Vertical shared axis transition
       GoRoute(
         path: '/swipe-review',
         name: 'swipe-review',
-        builder: (context, state) => const SwipeReviewScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const SwipeReviewScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SharedAxisTransition(
+              animation: animation,
+              secondaryAnimation: secondaryAnimation,
+              transitionType: SharedAxisTransitionType.vertical,
+              child: child,
+            );
+          },
+        ),
       ),
+
+      // Duplicates - Horizontal shared axis transition
       GoRoute(
         path: '/duplicates',
         name: 'duplicates',
-        builder: (context, state) => const DuplicatesScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const DuplicatesScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SharedAxisTransition(
+              animation: animation,
+              secondaryAnimation: secondaryAnimation,
+              transitionType: SharedAxisTransitionType.horizontal,
+              child: child,
+            );
+          },
+        ),
       ),
+
+      // Confirm Delete - Fade through transition
       GoRoute(
         path: '/confirm-delete',
         name: 'confirm-delete',
-        builder: (context, state) => const ConfirmDeleteScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const ConfirmDeleteScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeThroughTransition(
+              animation: animation,
+              secondaryAnimation: secondaryAnimation,
+              child: child,
+            );
+          },
+        ),
       ),
+
+      // Photo Details - Fade scale transition
       GoRoute(
         path: '/photo-details',
         name: 'photo-details',
@@ -59,12 +98,18 @@ class AppRouter {
               ),
             );
           }
-          return MaterialPage(
-            fullscreenDialog: true,
+          return CustomTransitionPage(
+            key: state.pageKey,
             child: PhotoDetailsScreen(
               asset: extra['asset'] as AssetEntity,
               photoId: extra['photoId'] as String,
             ),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeScaleTransition(
+                animation: animation,
+                child: child,
+              );
+            },
           );
         },
       ),

@@ -3,7 +3,7 @@ import '../../../../core/theme/app_colors.dart';
 
 /// Floating bubble button showing count of photos marked for deletion
 /// iOS/WhatsApp-style circular button that appears in top-right corner
-class FloatingBubble extends StatelessWidget {
+class FloatingBubble extends StatefulWidget {
   final int count;
   final VoidCallback onTap;
 
@@ -14,13 +14,49 @@ class FloatingBubble extends StatelessWidget {
   });
 
   @override
+  State<FloatingBubble> createState() => _FloatingBubbleState();
+}
+
+class _FloatingBubbleState extends State<FloatingBubble> {
+  bool _isVisible = false;
+  int _previousCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _previousCount = widget.count;
+    // Trigger entrance animation
+    Future.microtask(() {
+      if (mounted) {
+        setState(() => _isVisible = true);
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(FloatingBubble oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Trigger pulse animation when count changes
+    if (widget.count != _previousCount) {
+      _previousCount = widget.count;
+      // Pulse effect
+      setState(() => _isVisible = false);
+      Future.delayed(const Duration(milliseconds: 50), () {
+        if (mounted) {
+          setState(() => _isVisible = true);
+        }
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: AnimatedScale(
-        scale: 1.0,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
+        scale: _isVisible ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.elasticOut,
         child: Container(
           width: 64,
           height: 64,
@@ -45,7 +81,7 @@ class FloatingBubble extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                '$count',
+                '${widget.count}',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,

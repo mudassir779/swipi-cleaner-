@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
@@ -6,19 +7,95 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/photo_grid_item.dart';
 import '../domain/providers/month_photos_provider.dart';
 import 'widgets/app_drawer.dart';
+import 'widgets/month_picker_sheet.dart';
 
 /// Photos screen with month-by-month organization
-class PhotosScreen extends ConsumerWidget {
+class PhotosScreen extends ConsumerStatefulWidget {
   const PhotosScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PhotosScreen> createState() => _PhotosScreenState();
+}
+
+class _PhotosScreenState extends ConsumerState<PhotosScreen> {
+  final ScrollController _scrollController = ScrollController();
+  bool _showMonthPickerFAB = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    // Hide FAB when scrolling down, show when scrolling up
+    final direction = _scrollController.position.userScrollDirection;
+    if (direction == ScrollDirection.reverse && _showMonthPickerFAB) {
+      setState(() => _showMonthPickerFAB = false);
+    } else if (direction == ScrollDirection.forward && !_showMonthPickerFAB) {
+      setState(() => _showMonthPickerFAB = true);
+    }
+  }
+
+  void _showMonthPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => MonthPickerSheet(
+        onMonthSelected: _scrollToMonth,
+      ),
+    );
+  }
+
+  void _scrollToMonth(String monthKey) {
+    final monthGroupsAsync = ref.read(monthPhotosProvider);
+
+    monthGroupsAsync.whenData((monthGroups) {
+      // Find index of the selected month
+      final index = monthGroups.indexWhere((g) => g.monthKey == monthKey);
+
+      if (index == -1) return;
+
+      // Calculate approximate offset
+      // Each section has: header (56px) + photos grid
+      // Approximate grid height based on 3-column grid with aspect ratio 1:1
+      double offset = 0;
+      for (int i = 0; i < index; i++) {
+        offset += 56; // Header height
+        if (monthGroups[i].photoCount > 0) {
+          // Calculate grid rows
+          final rows = (monthGroups[i].photoCount / 3).ceil();
+          final screenWidth = MediaQuery.of(context).size.width;
+          final itemSize = (screenWidth - 8) / 3; // 3 columns with 2px spacing
+          offset += rows * (itemSize + 2) + 4; // Add grid height + padding
+        }
+      }
+
+      // Animate to calculated offset
+      _scrollController.animateTo(
+        offset,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOutCubic,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final monthGroupsAsync = ref.watch(monthPhotosProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       drawer: const AppDrawer(),
-      floatingActionButton: _buildQuickCleanButton(context, ref),
+      floatingActionButton: _buildFABs(context, ref),
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
@@ -111,6 +188,7 @@ class PhotosScreen extends ConsumerWidget {
               ref.invalidate(monthPhotosProvider);
             },
             child: CustomScrollView(
+              controller: _scrollController,
               slivers: [
                 // Build sliver grid for each month
                 for (int i = 0; i < monthGroups.length; i++)
@@ -123,27 +201,51 @@ class PhotosScreen extends ConsumerWidget {
     );
   }
 
-  /// Build floating quick clean button (shows when today has photos)
-  Widget? _buildQuickCleanButton(BuildContext context, WidgetRef ref) {
+  /// Build floating action buttons
+  Widget? _buildFABs(BuildContext context, WidgetRef ref) {
     final todayPhotosAsync = ref.watch(todayPhotosProvider);
 
     return todayPhotosAsync.when(
       data: (photos) {
-        // Only show button if today has photos
-        if (photos.isEmpty) return null;
+        final hasToday = photos.isNotEmpty;
 
-        return FloatingActionButton.extended(
-          onPressed: () => context.push('/swipe-review?filter=today'),
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          icon: const Icon(Icons.today),
-          label: const Text(
-            'Clean Today',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            // Month picker FAB (always visible when not scrolling down)
+            AnimatedScale(
+              scale: _showMonthPickerFAB ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              child: FloatingActionButton(
+                heroTag: 'month_picker',
+                onPressed: _showMonthPicker,
+                backgroundColor: AppColors.primary,
+                child: const Icon(Icons.calendar_month, color: Colors.white),
+              ),
             ),
-          ),
+
+            // Spacing if both FABs are shown
+            if (hasToday) const SizedBox(height: 16),
+
+            // Clean Today FAB (conditional)
+            if (hasToday)
+              FloatingActionButton.extended(
+                heroTag: 'clean_today',
+                onPressed: () => context.push('/swipe-review?filter=today'),
+                backgroundColor: AppColors.green,
+                foregroundColor: Colors.white,
+                icon: const Icon(Icons.today),
+                label: const Text(
+                  'Clean Today',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+          ],
         );
       },
       loading: () => null,
@@ -182,6 +284,7 @@ class PhotosScreen extends ConsumerWidget {
                 return PhotoGridItem(
                   asset: photo.asset,
                   isSelected: false,
+                  index: photoIndex,
                   onTap: () {
                     // Navigate to swipe review starting from this photo
                     context.push(

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'app_colors.dart';
 
-/// Material Design 3 theme for Swipe to Clean Storage app
+/// Material Design 3 theme for Swipple : swipe to clean app
 class AppTheme {
   static ThemeData get darkTheme {
     return ThemeData(

@@ -36,6 +36,29 @@ class Photo {
     );
   }
 
+  /// Create Photo from AssetEntity (fast - skips fileSize)
+  /// Use this for grid rendering to avoid blocking I/O
+  /// File size can be loaded later on-demand using getFileSize()
+  static Photo fromAssetFast(AssetEntity asset) {
+    return Photo(
+      id: asset.id,
+      title: asset.title,
+      creationDate: asset.createDateTime,
+      width: asset.width,
+      height: asset.height,
+      fileSize: null, // Skip file size for performance
+      asset: asset,
+    );
+  }
+
+  /// Lazy load file size on-demand
+  /// Use this when displaying photo details or when file size is needed
+  Future<int?> getFileSize() async {
+    if (fileSize != null) return fileSize;
+    final file = await asset.file;
+    return file?.length();
+  }
+
   /// Get formatted file size
   String get formattedSize {
     if (fileSize == null) return 'Unknown';

@@ -32,10 +32,8 @@ final photosProvider =
 
   final assets = await service.getAllPhotos(page: page, size: 100);
 
-  // Convert AssetEntity to Photo model
-  final photos = await Future.wait(
-    assets.map((asset) => Photo.fromAsset(asset)),
-  );
+  // Convert AssetEntity to Photo model (fast - no file I/O)
+  final photos = assets.map((asset) => Photo.fromAssetFast(asset)).toList();
 
   return photos;
 });
@@ -135,10 +133,8 @@ final allPhotosProvider = FutureProvider<List<Photo>>((ref) async {
 
     if (assets.isEmpty) break; // No more photos
 
-    // Convert AssetEntity to Photo model
-    final photos = await Future.wait(
-      assets.map((asset) => Photo.fromAsset(asset)),
-    );
+    // Convert AssetEntity to Photo model (fast - no file I/O)
+    final photos = assets.map((asset) => Photo.fromAssetFast(asset)).toList();
 
     allPhotos.addAll(photos);
     page++;

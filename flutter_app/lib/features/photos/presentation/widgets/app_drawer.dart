@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
 
 /// App navigation drawer - Apple-style minimal design
 class AppDrawer extends ConsumerWidget {
@@ -20,9 +19,9 @@ class AppDrawer extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
               child: Text(
-                'Swipe to Clean Storage',
+                'Swipple',
                 style: const TextStyle(
-                  fontSize: 34,
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                   letterSpacing: -0.5,
@@ -59,8 +58,7 @@ class AppDrawer extends ConsumerWidget {
                           ),
                           content: const Text(
                             'Need help? We\'re here for you!\n\n'
-                            'Email: support@swipetoclean.app\n'
-                            'Website: swipetoclean.app',
+                            'Visit swipple.app for support and documentation.',
                             style: TextStyle(color: AppColors.textSecondary),
                           ),
                           actions: [
@@ -88,10 +86,10 @@ class AppDrawer extends ConsumerWidget {
                             style: TextStyle(color: AppColors.textPrimary),
                           ),
                           content: const Text(
-                            'Swipe to Clean Storage\n\n'
+                            'Swipple : swipe to clean\n\n'
                             'The fastest way to clean your photo library.\n\n'
                             'Version 1.0.0\n'
-                            '© 2026 Swipe to Clean',
+                            '© 2026 Swipple',
                             style: TextStyle(color: AppColors.textSecondary),
                           ),
                           actions: [
@@ -113,7 +111,9 @@ class AppDrawer extends ConsumerWidget {
               padding: const EdgeInsets.all(24),
               child: Text(
                 'Version 1.0.0',
-                style: AppTextStyles.bodySmall.copyWith(
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
                   color: AppColors.textSecondary,
                 ),
               ),
@@ -135,7 +135,7 @@ class AppDrawer extends ConsumerWidget {
       title: Text(
         title,
         style: const TextStyle(
-          fontSize: 17,
+          fontSize: 15,
           fontWeight: FontWeight.w400,
           color: AppColors.textPrimary,
         ),

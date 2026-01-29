@@ -1,25 +1,62 @@
+import 'dart:isolate';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
+import 'package:image/image.dart' as img;
 import 'package:photo_manager/photo_manager.dart';
 import '../../../photos/domain/models/photo.dart';
 import '../models/duplicate_group.dart';
 
-/// Service for detecting duplicate and similar photos
+/// Service for detecting duplicate and similar photos using perceptual hashing
 class DuplicateDetector {
-  /// Threshold for considering photos as duplicates (0-64, lower = more similar)
-  static const int similarityThreshold = 10;
-
   /// Find duplicate groups in a list of photos
-  Future<List<DuplicateGroup>> findDuplicates(List<Photo> photos) async {
+  /// Uses isolate for background processing to avoid UI jank
+  Future<List<DuplicateGroup>> findDuplicates(
+    List<Photo> photos, {
+    int similarityThreshold = 10,
+    Function(int current, int total)? onProgress,
+  }) async {
+    if (photos.isEmpty) return [];
+
+    // For small lists, process directly
+    if (photos.length < 50) {
+      return _findDuplicatesSync(photos, similarityThreshold, onProgress);
+    }
+
+    // For larger lists, use isolate for background processing
+    final receivePort = ReceivePort();
+
+    await Isolate.spawn(
+      _isolateFindDuplicates,
+      _IsolateParams(
+        photos: photos,
+        similarityThreshold: similarityThreshold,
+        sendPort: receivePort.sendPort,
+      ),
+    );
+
+    final result = await receivePort.first as List<DuplicateGroup>;
+    return result;
+  }
+
+  /// Synchronous duplicate finding (used for small lists or in isolate)
+  Future<List<DuplicateGroup>> _findDuplicatesSync(
+    List<Photo> photos,
+    int similarityThreshold,
+    Function(int current, int total)? onProgress,
+  ) async {
     final List<DuplicateGroup> groups = [];
     final Map<String, String> photoHashes = {};
     final processed = <String>{};
 
-    // Compute hashes for all photos
-    for (final photo in photos) {
+    // Compute perceptual hashes for all photos
+    for (int i = 0; i < photos.length; i++) {
+      final photo = photos[i];
       try {
-        photoHashes[photo.id] = await _computeSimpleHash(photo);
+        photoHashes[photo.id] = await _computePerceptualHash(photo);
+        onProgress?.call(i + 1, photos.length);
       } catch (e) {
         // Skip photos that can't be processed
+        debugPrint('Error processing photo ${photo.id}: $e');
         continue;
       }
     }
@@ -30,6 +67,7 @@ class DuplicateDetector {
       if (!photoHashes.containsKey(photo.id)) continue;
 
       final similar = <Photo>[photo];
+      final similarities = <double>[];
 
       for (final other in photos) {
         if (processed.contains(other.id) || photo.id == other.id) continue;
@@ -43,81 +81,82 @@ class DuplicateDetector {
         if (distance <= similarityThreshold) {
           similar.add(other);
           processed.add(other.id);
+          // Calculate similarity percentage (0-100%)
+          similarities.add(100.0 - (distance / 64.0 * 100.0));
         }
       }
 
       if (similar.length > 1) {
+        // Use average similarity score
+        final avgSimilarity = similarities.isEmpty
+            ? 100.0
+            : similarities.reduce((a, b) => a + b) / similarities.length;
+
         groups.add(DuplicateGroup(
           photos: similar,
-          similarityScore: 1.0 - (similarityThreshold / 64.0),
+          similarityScore: avgSimilarity / 100.0,
         ));
         processed.addAll(similar.map((p) => p.id));
       }
     }
 
+    // Sort groups by similarity (highest first)
+    groups.sort((a, b) => b.similarityScore.compareTo(a.similarityScore));
+
     return groups;
   }
 
-  /// Compute a simple hash for a photo based on dimensions and file size
-  /// NOTE: For production, use perceptual hashing (pHash) or difference hashing (dHash)
-  /// which analyze actual image content, not just metadata
-  Future<String> _computeSimpleHash(Photo photo) async {
-    // Create a simple hash based on dimensions and file size
-    // This will catch exact duplicates but not visually similar images
-    final width = photo.width;
-    final height = photo.height;
-    final size = photo.fileSize ?? 0;
-
-    // For better duplicate detection, we should:
-    // 1. Get thumbnail bytes: await photo.asset.thumbnailDataWithSize(ThumbnailSize(32, 32))
-    // 2. Convert to grayscale
-    // 3. Resize to 8x8 or 32x32
-    // 4. Compute DCT (Discrete Cosine Transform) for pHash
-    // 5. Or compute average hash for simpler approach
-
-    // Simple approach: create hash from metadata
-    final buffer = StringBuffer();
-    buffer.write(width.toString().padLeft(5, '0'));
-    buffer.write(height.toString().padLeft(5, '0'));
-    buffer.write((size ~/ 1024).toString().padLeft(8, '0')); // KB
-
-    // Try to get a basic image fingerprint
+  /// Compute perceptual hash using difference hash (dHash) algorithm
+  /// This is more robust than simple average hash and works well for finding duplicates
+  Future<String> _computePerceptualHash(Photo photo) async {
     try {
+      // Get thumbnail bytes (32x32 is good balance of accuracy vs speed)
       final bytes = await photo.asset.thumbnailDataWithSize(
-        ThumbnailSize(8, 8),
+        const ThumbnailSize(32, 32),
       );
-      if (bytes != null) {
-        // Compute simple average hash
-        buffer.write(_computeAverageHash(bytes));
+
+      if (bytes == null) {
+        throw Exception('Failed to get thumbnail');
       }
+
+      // Decode image using image package
+      final image = img.decodeImage(bytes);
+      if (image == null) {
+        throw Exception('Failed to decode image');
+      }
+
+      // Convert to grayscale
+      final grayscale = img.grayscale(image);
+
+      // Resize to 9x8 for difference hash (we need 9 width to compare 8 adjacent pixels)
+      final resized = img.copyResize(grayscale, width: 9, height: 8);
+
+      // Compute difference hash
+      // Compare each pixel to its neighbor on the right
+      final buffer = StringBuffer();
+      for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 8; x++) {
+          final pixel = resized.getPixel(x, y);
+          final nextPixel = resized.getPixel(x + 1, y);
+
+          // Get luminance (red channel in grayscale)
+          final luminance = pixel.r.toInt();
+          final nextLuminance = nextPixel.r.toInt();
+
+          // 1 if current pixel is brighter than next, 0 otherwise
+          buffer.write(luminance > nextLuminance ? '1' : '0');
+        }
+      }
+
+      return buffer.toString();
     } catch (e) {
-      // If thumbnail fails, just use metadata hash
+      debugPrint('Error computing perceptual hash: $e');
+      rethrow;
     }
-
-    return buffer.toString();
-  }
-
-  /// Compute average hash from image bytes (simplified version)
-  String _computeAverageHash(Uint8List bytes) {
-    // This is a simplified version. For production:
-    // 1. Decode image properly
-    // 2. Convert to grayscale
-    // 3. Resize to 8x8
-    // 4. Compute average pixel value
-    // 5. Create binary hash (1 if pixel > average, 0 otherwise)
-
-    // For now, just sample some bytes to create a hash
-    final buffer = StringBuffer();
-    final step = bytes.length ~/ 64;
-
-    for (int i = 0; i < 64 && i * step < bytes.length; i++) {
-      buffer.write((bytes[i * step] > 128) ? '1' : '0');
-    }
-
-    return buffer.toString().padRight(64, '0');
   }
 
   /// Calculate Hamming distance between two hash strings
+  /// This measures how many bits differ between the two hashes
   int _hammingDistance(String hash1, String hash2) {
     if (hash1.length != hash2.length) {
       return 64; // Maximum distance
@@ -129,4 +168,28 @@ class DuplicateDetector {
     }
     return distance;
   }
+
+  /// Isolate entry point for background duplicate detection
+  static void _isolateFindDuplicates(_IsolateParams params) async {
+    final detector = DuplicateDetector();
+    final result = await detector._findDuplicatesSync(
+      params.photos,
+      params.similarityThreshold,
+      null, // No progress callback in isolate
+    );
+    params.sendPort.send(result);
+  }
+}
+
+/// Parameters for isolate-based duplicate detection
+class _IsolateParams {
+  final List<Photo> photos;
+  final int similarityThreshold;
+  final SendPort sendPort;
+
+  _IsolateParams({
+    required this.photos,
+    required this.similarityThreshold,
+    required this.sendPort,
+  });
 }
