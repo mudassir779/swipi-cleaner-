@@ -23,14 +23,14 @@ class DuplicatesScreen extends ConsumerWidget {
     final selection = ref.watch(duplicateSelectionProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      // backgroundColor: removed to use theme default
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        // backgroundColor: removed to use theme default
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Find Duplicates',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: Theme.of(context).textTheme.titleLarge?.color,
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
@@ -89,7 +89,7 @@ class DuplicatesScreen extends ConsumerWidget {
                   Text(
                     'No Duplicates Found!',
                     style: AppTextStyles.title.copyWith(
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).textTheme.titleLarge?.color,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -138,6 +138,7 @@ class DuplicatesScreen extends ConsumerWidget {
                             ],
                           ),
                           border: Border.all(color: AppColors.divider),
+                          color: Theme.of(context).cardTheme.color,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -173,10 +174,10 @@ class DuplicatesScreen extends ConsumerWidget {
                                         builder: (context, value, _) {
                                           return Text(
                                             '$value Duplicates Found',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 28,
                                               fontWeight: FontWeight.w800,
-                                              color: AppColors.textPrimary,
+                                              color: Theme.of(context).textTheme.titleLarge?.color,
                                               letterSpacing: -0.5,
                                             ),
                                           );
@@ -255,7 +256,7 @@ class DuplicatesScreen extends ConsumerWidget {
                       Text(
                         'Groups',
                         style: AppTextStyles.title.copyWith(
-                          color: AppColors.textPrimary,
+                          color: Theme.of(context).textTheme.titleMedium?.color,
                           fontSize: 18,
                         ),
                       ),
@@ -280,7 +281,7 @@ class DuplicatesScreen extends ConsumerWidget {
       bottomNavigationBar: selection.isNotEmpty
           ? Container(
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: Theme.of(context).cardTheme.color,
                 border: Border(
                   top: BorderSide(
                     color: AppColors.divider,
@@ -301,7 +302,7 @@ class DuplicatesScreen extends ConsumerWidget {
                             '${selection.length} selected',
                             style: AppTextStyles.body.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                              color: Theme.of(context).textTheme.titleMedium?.color,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -364,7 +365,7 @@ class DuplicatesScreen extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 0,
-      color: AppColors.cardBackground,
+      color: Theme.of(context).cardTheme.color,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: const BorderSide(
@@ -393,7 +394,7 @@ class DuplicatesScreen extends ConsumerWidget {
                   'Group ${groupIndex + 1}',
                   style: AppTextStyles.body.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -543,7 +544,7 @@ class _StatPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.divider),
         boxShadow: [
@@ -573,10 +574,10 @@ class _StatPill extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).textTheme.titleSmall?.color,
                     letterSpacing: -0.2,
                   ),
                   maxLines: 1,

@@ -15,14 +15,14 @@ class SmartCollectionsScreen extends ConsumerWidget {
     final photosAsync = ref.watch(allPhotosProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      // backgroundColor: removed to use theme default
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        // backgroundColor: removed to use theme default
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Smart Collections',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: Theme.of(context).textTheme.titleLarge?.color,
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
@@ -106,12 +106,12 @@ class SmartCollectionsScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'AI-Powered Organization',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
-                                color: AppColors.textPrimary,
+                                color: Theme.of(context).textTheme.titleMedium?.color,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -139,11 +139,7 @@ class SmartCollectionsScreen extends ConsumerWidget {
                   count: largeFiles.length,
                   size: formatBytes(largeFilesSize),
                   gradientColors: const [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${largeFiles.length} large files found')),
-                    );
-                  },
+                  onTap: () => context.push('/collection-photos/large'),
                 ),
 
                 const SizedBox(height: 12),
@@ -155,11 +151,7 @@ class SmartCollectionsScreen extends ConsumerWidget {
                   count: oldPhotos.length,
                   size: formatBytes(oldPhotosSize),
                   gradientColors: const [Color(0xFF667EEA), Color(0xFF764BA2)],
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${oldPhotos.length} old photos found')),
-                    );
-                  },
+                  onTap: () => context.push('/collection-photos/old'),
                 ),
 
                 const SizedBox(height: 12),
@@ -171,7 +163,7 @@ class SmartCollectionsScreen extends ConsumerWidget {
                   count: screenshots.length,
                   size: formatBytes(screenshotsSize),
                   gradientColors: const [Color(0xFF4FACFE), Color(0xFF00F2FE)],
-                  onTap: () => context.push('/swipe-review?filter=screenshots'),
+                  onTap: () => context.push('/collection-photos/screenshots'),
                 ),
 
                 const SizedBox(height: 12),
@@ -222,7 +214,7 @@ class _CollectionCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.divider),
           boxShadow: [
@@ -255,10 +247,10 @@ class _CollectionCard extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).textTheme.titleMedium?.color,
                     ),
                   ),
                   const SizedBox(height: 4),

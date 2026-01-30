@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/photo_grid_item.dart';
@@ -11,7 +13,41 @@ import '../domain/providers/delete_queue_provider.dart';
 import '../domain/providers/photo_selection_provider.dart';
 import 'widgets/app_drawer.dart';
 
-/// Photos screen with month-by-month organization
+/// Provider for managing expanded state of month sections
+final expandedMonthsProvider = StateNotifierProvider<ExpandedMonthsNotifier, Map<String, bool>>((ref) {
+  return ExpandedMonthsNotifier();
+});
+
+class ExpandedMonthsNotifier extends StateNotifier<Map<String, bool>> {
+  ExpandedMonthsNotifier() : super({}) {
+    _loadState();
+  }
+
+  Future<void> _loadState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys().where((k) => k.startsWith('month_expanded_'));
+    final newState = <String, bool>{};
+    for (final key in keys) {
+      final monthKey = key.replaceFirst('month_expanded_', '');
+      newState[monthKey] = prefs.getBool(key) ?? true;
+    }
+    state = newState;
+  }
+
+  Future<void> toggle(String monthKey) async {
+    final current = state[monthKey] ?? true;
+    state = {...state, monthKey: !current};
+    
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('month_expanded_$monthKey', !current);
+  }
+
+  bool isExpanded(String monthKey) {
+    return state[monthKey] ?? true; // Default to expanded
+  }
+}
+
+/// Photos screen with collapsible month-by-month organization
 class PhotosScreen extends ConsumerWidget {
   const PhotosScreen({super.key});
 
@@ -19,17 +55,19 @@ class PhotosScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final monthGroupsAsync = ref.watch(monthPhotosProvider);
     final selection = ref.watch(photoSelectionProvider);
+    final expandedMonths = ref.watch(expandedMonthsProvider);
 
     return MainScaffold(
       currentIndex: 1,
       child: Scaffold(
-      backgroundColor: AppColors.snow,
+      // backgroundColor: removed to use theme default
       drawerScrimColor: Colors.black.withValues(alpha: 0.45),
       drawer: const AppDrawer(),
       floatingActionButton: _buildQuickCleanButton(context, ref),
       appBar: AppBar(
-        backgroundColor: AppColors.snow,
+        // backgroundColor: removed to use theme default
         elevation: 0,
+        centerTitle: true,
         toolbarHeight: 60,
         leading: selection.isSelectionMode
             ? IconButton(
@@ -38,16 +76,15 @@ class PhotosScreen extends ConsumerWidget {
                 tooltip: 'Exit selection',
               )
             : Builder(
-                builder: (context) => IconButton(
-                  icon: const Icon(Icons.menu, color: AppColors.textPrimary, size: 24),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
+                builder: (context) => _AnimatedMenuButton(
+                  onTap: () => Scaffold.of(context).openDrawer(),
                 ),
               ),
         title: Text(
           selection.isSelectionMode ? '${selection.count} Selected' : 'Photos',
-          style: const TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 34,
+          style: TextStyle(
+            color: Theme.of(context).textTheme.titleLarge?.color,
+            fontSize: 24,
             fontWeight: FontWeight.bold,
             letterSpacing: -0.5,
           ),
@@ -138,13 +175,23 @@ class PhotosScreen extends ConsumerWidget {
             onRefresh: () async {
               ref.invalidate(monthPhotosProvider);
             },
-            child: CustomScrollView(
-              slivers: [
-                // Build sliver grid for each month
-                for (int i = 0; i < monthGroups.length; i++)
-                  ..._buildMonthSection(context, ref, monthGroups[i], i),
-                const SliverToBoxAdapter(child: SizedBox(height: 96)),
-              ],
+            child: ListView.builder(
+              padding: const EdgeInsets.only(bottom: 96),
+              itemCount: monthGroups.length,
+              itemBuilder: (context, index) {
+                final monthGroup = monthGroups[index];
+                final isExpanded = expandedMonths[monthGroup.monthKey] ?? true;
+                
+                return _CollapsibleMonthSection(
+                  monthGroup: monthGroup,
+                  isExpanded: isExpanded,
+                  onToggle: () {
+                    HapticFeedback.lightImpact();
+                    ref.read(expandedMonthsProvider.notifier).toggle(monthGroup.monthKey);
+                  },
+                  ref: ref,
+                );
+              },
             ),
           );
         },
@@ -162,16 +209,43 @@ class PhotosScreen extends ConsumerWidget {
         // Only show button if today has photos
         if (photos.isEmpty) return null;
 
-        return FloatingActionButton.extended(
-          onPressed: () => context.push('/swipe-review?filter=today'),
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          icon: const Icon(Icons.today),
-          label: const Text(
-            'Clean Today',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
+        return Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: AppColors.gradientPrimary,
+            ),
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.4),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => context.push('/swipe-review?filter=today'),
+              borderRadius: BorderRadius.circular(30),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.calendar_today, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Clean Today',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         );
@@ -180,145 +254,229 @@ class PhotosScreen extends ConsumerWidget {
       error: (error, stack) => null,
     );
   }
-
-  /// Build month section with sticky header and photo grid
-  List<Widget> _buildMonthSection(BuildContext context, WidgetRef ref, monthGroup, int index) {
-    final isEmpty = monthGroup.photoCount == 0;
-    final selection = ref.watch(photoSelectionProvider);
-
-    return [
-      // Sticky month header
-      SliverPersistentHeader(
-        pinned: true,
-        delegate: _MonthHeaderDelegate(
-          monthGroup: monthGroup,
-          isEmpty: isEmpty,
-        ),
-      ),
-
-      // Photo grid for this month
-      if (!isEmpty)
-        SliverPadding(
-          padding: const EdgeInsets.all(2),
-          sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 2,
-              mainAxisSpacing: 2,
-              childAspectRatio: 1,
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (context, photoIndex) {
-                final photo = monthGroup.photos[photoIndex];
-                final isSelected = selection.selectedIds.contains(photo.id);
-                return PhotoGridItem(
-                  asset: photo.asset,
-                  isSelected: isSelected,
-                  onTap: () {
-                    if (selection.isSelectionMode) {
-                      ref.read(photoSelectionProvider.notifier).toggle(photo.id);
-                      return;
-                    }
-                    context.push('/swipe-review?month=${monthGroup.monthKey}&start=$photoIndex');
-                  },
-                  onLongPress: () {
-                    if (!selection.isSelectionMode) {
-                      ref.read(photoSelectionProvider.notifier).enterSelectionMode(initialId: photo.id);
-                    } else {
-                      ref.read(photoSelectionProvider.notifier).toggle(photo.id);
-                    }
-                  },
-                );
-              },
-              childCount: monthGroup.photos.length,
-            ),
-          ),
-        ),
-
-      // Empty state for months with no photos
-      if (isEmpty)
-        SliverToBoxAdapter(
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            child: Center(
-              child: Text(
-                'No photos in ${monthGroup.displayName}',
-                style: AppTextStyles.body.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-          ),
-        ),
-    ];
-  }
 }
 
-/// Sticky header delegate for month headers
-class _MonthHeaderDelegate extends SliverPersistentHeaderDelegate {
+/// Collapsible month section with smooth animations
+class _CollapsibleMonthSection extends StatelessWidget {
   final dynamic monthGroup;
-  final bool isEmpty;
+  final bool isExpanded;
+  final VoidCallback onToggle;
+  final WidgetRef ref;
 
-  _MonthHeaderDelegate({
+  const _CollapsibleMonthSection({
     required this.monthGroup,
-    required this.isEmpty,
+    required this.isExpanded,
+    required this.onToggle,
+    required this.ref,
   });
 
   @override
-  double get minExtent => 56;
+  Widget build(BuildContext context) {
+    final isEmpty = monthGroup.photoCount == 0;
+    final selection = ref.watch(photoSelectionProvider);
+
+    return Column(
+      children: [
+        // Collapsible Month Header
+        InkWell(
+          onTap: onToggle,
+          child: Container(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                // Purple dot indicator
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: isEmpty
+                        ? AppColors.textSecondary.withValues(alpha: 0.3)
+                        : AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Month name
+                Text(
+                  monthGroup.displayName,
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.5,
+                    color: isEmpty
+                        ? AppColors.textSecondary.withValues(alpha: 0.5)
+                        : Theme.of(context).textTheme.titleMedium?.color,
+                  ),
+                ),
+                const Spacer(),
+                // Photo count
+                Text(
+                  '${monthGroup.photoCount} photos',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: isEmpty
+                        ? AppColors.textSecondary.withValues(alpha: 0.5)
+                        : AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Animated chevron
+                AnimatedRotation(
+                  turns: isExpanded ? 0 : -0.25,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  child: Icon(
+                    Icons.keyboard_arrow_down,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Collapsible Photos Grid
+        AnimatedSize(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          child: isExpanded && !isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 2,
+                      mainAxisSpacing: 2,
+                      childAspectRatio: 1,
+                    ),
+                    itemCount: monthGroup.photos.length,
+                    itemBuilder: (context, photoIndex) {
+                      final photo = monthGroup.photos[photoIndex];
+                      final isSelected = selection.selectedIds.contains(photo.id);
+                      return PhotoGridItem(
+                        asset: photo.asset,
+                        isSelected: isSelected,
+                        onTap: () {
+                          if (selection.isSelectionMode) {
+                            ref.read(photoSelectionProvider.notifier).toggle(photo.id);
+                            return;
+                          }
+                          context.push('/swipe-review?month=${monthGroup.monthKey}&start=$photoIndex');
+                        },
+                        onLongPress: () {
+                          if (!selection.isSelectionMode) {
+                            ref.read(photoSelectionProvider.notifier).enterSelectionMode(initialId: photo.id);
+                          } else {
+                            ref.read(photoSelectionProvider.notifier).toggle(photo.id);
+                          }
+                        },
+                      );
+                    },
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+}
+
+
+/// Animated Menu Button with scale effect and premium styling
+class _AnimatedMenuButton extends StatefulWidget {
+  final VoidCallback onTap;
+
+  const _AnimatedMenuButton({required this.onTap});
 
   @override
-  double get maxExtent => 56;
+  State<_AnimatedMenuButton> createState() => _AnimatedMenuButtonState();
+}
+
+class _AnimatedMenuButtonState extends State<_AnimatedMenuButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: AppColors.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          // Coral dot indicator (grayed out for empty months)
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: isEmpty
-                  ? AppColors.textSecondary.withValues(alpha: 0.3)
-                  : AppColors.primary,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Month name
-          Text(
-            monthGroup.displayName,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.5,
-              color: isEmpty
-                  ? AppColors.textSecondary.withValues(alpha: 0.5)
-                  : AppColors.textPrimary,
-            ),
-          ),
-          const Spacer(),
-          // Photo count
-          Text(
-            '${monthGroup.photoCount} photos',
-            style: TextStyle(
-              fontSize: 15,
-              color: isEmpty
-                  ? AppColors.textSecondary.withValues(alpha: 0.5)
-                  : AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
 
   @override
-  bool shouldRebuild(_MonthHeaderDelegate oldDelegate) {
-    return monthGroup != oldDelegate.monthGroup || isEmpty != oldDelegate.isEmpty;
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) {
+        _controller.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _controller.reverse(),
+      child: AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) => Transform.scale(
+          scale: _scaleAnimation.value,
+          child: child,
+        ),
+        child: Container(
+          margin: const EdgeInsets.only(left: 16),
+          width: 44,
+          height: 44,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: AppColors.borderLight,
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildLine(width: 20),
+              const SizedBox(height: 5),
+              _buildLine(width: 14),
+              const SizedBox(height: 5),
+              _buildLine(width: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLine({required double width}) {
+    return Container(
+      width: width,
+      height: 2.5,
+      decoration: BoxDecoration(
+        color: AppColors.textPrimary,
+        borderRadius: BorderRadius.circular(2),
+      ),
+    );
   }
 }

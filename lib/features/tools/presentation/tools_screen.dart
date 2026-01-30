@@ -13,18 +13,18 @@ class ToolsScreen extends StatelessWidget {
     return MainScaffold(
       currentIndex: 2,
       child: Scaffold(
-        backgroundColor: AppColors.snow,
+        // backgroundColor: removed to use theme default
         appBar: AppBar(
-          backgroundColor: AppColors.snow,
+          // backgroundColor: removed to use theme default
           elevation: 0,
           toolbarHeight: 70,
-          title: const Column(
+          title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Tools',
                 style: TextStyle(
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).textTheme.titleLarge?.color,
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.5,
@@ -54,16 +54,6 @@ class ToolsScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _ToolCard(
-                      icon: Icons.content_copy_rounded,
-                      title: 'Find Duplicates',
-                      subtitle: 'Remove copies',
-                      gradientColors: const [Color(0xFF667EEA), Color(0xFF764BA2)],
-                      onTap: () => context.push('/duplicates'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _ToolCard(
                       icon: Icons.auto_awesome_rounded,
                       title: 'Smart Collections',
                       subtitle: 'Auto-organized',
@@ -71,62 +61,14 @@ class ToolsScreen extends StatelessWidget {
                       onTap: () => context.push('/smart-collections'),
                     ),
                   ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // Compression Section
-              Text('COMPRESSION', style: AppTextStyles.sectionHeader),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _ToolCard(
-                      icon: Icons.photo_size_select_large_rounded,
-                      title: 'Compress Photos',
-                      subtitle: 'Reduce file size',
-                      gradientColors: const [Color(0xFFF093FB), Color(0xFFF5576C)],
-                      onTap: () => context.push('/compress-photos'),
-                    ),
-                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _ToolCard(
-                      icon: Icons.video_settings_rounded,
-                      title: 'Compress Videos',
-                      subtitle: 'Smaller videos',
-                      gradientColors: const [Color(0xFFFA709A), Color(0xFFFEE140)],
-                      onTap: () => context.push('/compress-videos'),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // Conversion Section
-              Text('CONVERSION', style: AppTextStyles.sectionHeader),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _ToolCard(
-                      icon: Icons.picture_as_pdf_rounded,
-                      title: 'Create PDF',
-                      subtitle: 'From photos',
-                      gradientColors: const [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
-                      onTap: () => context.push('/create-pdf'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _ToolCard(
-                      icon: Icons.burst_mode_rounded,
-                      title: 'Video Frames',
-                      subtitle: 'Extract images',
-                      gradientColors: const [Color(0xFF4FACFE), Color(0xFF00F2FE)],
-                      onTap: () => context.push('/video-frames'),
+                      icon: Icons.cleaning_services_rounded,
+                      title: 'Social Media Cleaner',
+                      subtitle: 'WhatsApp & Telegram',
+                      gradientColors: const [Color(0xFF25D366), Color(0xFF0088CC)],
+                      onTap: () => context.push('/social-media-cleaner'),
                     ),
                   ),
                 ],
@@ -137,28 +79,12 @@ class ToolsScreen extends StatelessWidget {
               // Storage Section
               Text('STORAGE', style: AppTextStyles.sectionHeader),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _ToolCard(
-                      icon: Icons.storage_rounded,
-                      title: 'Storage Stats',
-                      subtitle: 'Usage overview',
-                      gradientColors: const [Color(0xFF7C3AED), Color(0xFF5B21B6)],
-                      onTap: () => context.push('/storage-stats'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _ToolCard(
-                      icon: Icons.delete_sweep_rounded,
-                      title: 'Recently Deleted',
-                      subtitle: '30-day recovery',
-                      gradientColors: const [Color(0xFF718096), Color(0xFFA0AEC0)],
-                      onTap: () => context.push('/recently-deleted'),
-                    ),
-                  ),
-                ],
+              _ToolCard(
+                icon: Icons.delete_sweep_rounded,
+                title: 'Recently Deleted',
+                subtitle: '30-day recovery',
+                gradientColors: const [Color(0xFF718096), Color(0xFFA0AEC0)],
+                onTap: () => context.push('/recently-deleted'),
               ),
 
               const SizedBox(height: 80),
@@ -193,7 +119,7 @@ class _ToolCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         height: 140, // Slightly taller to accommodate new design
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.divider),
           boxShadow: [
@@ -221,10 +147,10 @@ class _ToolCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).textTheme.titleMedium?.color,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

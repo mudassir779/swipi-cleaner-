@@ -32,12 +32,12 @@ class ChevronListTile extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: (leadingIconColor ?? AppColors.primary).withValues(alpha: 0.12),
+                color: AppColors.slateIcon,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 leadingIcon,
-                color: leadingIconColor ?? AppColors.primary,
+                color: Colors.white,
                 size: 20,
               ),
             ),

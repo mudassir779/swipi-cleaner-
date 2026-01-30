@@ -14,6 +14,8 @@ import '../features/tools/presentation/screens/create_pdf_screen.dart';
 import '../features/tools/presentation/screens/video_frames_screen.dart';
 import '../features/tools/presentation/screens/video_compression_screen.dart';
 import '../features/tools/presentation/screens/smart_collections_screen.dart';
+import '../features/tools/presentation/screens/collection_photos_screen.dart';
+import '../features/tools/presentation/screens/social_media_cleaner_screen.dart';
 import '../features/storage/presentation/storage_overview_screen.dart';
 import '../features/categories/presentation/categories_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
@@ -86,6 +88,30 @@ class AppRouter {
         path: '/compress-videos',
         name: 'compress-videos',
         builder: (context, state) => const VideoCompressionScreen(),
+      ),
+      GoRoute(
+        path: '/collection-photos/:type',
+        name: 'collection-photos',
+        builder: (context, state) {
+          final typeStr = state.pathParameters['type'] ?? 'large';
+          CollectionType type;
+          switch (typeStr) {
+            case 'old':
+              type = CollectionType.old;
+              break;
+            case 'screenshots':
+              type = CollectionType.screenshots;
+              break;
+            default:
+              type = CollectionType.large;
+          }
+          return CollectionPhotosScreen(collectionType: type);
+        },
+      ),
+      GoRoute(
+        path: '/social-media-cleaner',
+        name: 'social-media-cleaner',
+        builder: (context, state) => const SocialMediaCleanerScreen(),
       ),
       GoRoute(
         path: '/storage-stats',

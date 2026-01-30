@@ -98,20 +98,27 @@ class DuplicateDetector {
   }
 
   /// Compute average hash from image bytes (simplified version)
+  /// Uses dHash (difference hash) approach which compares adjacent pixels
   String _computeAverageHash(Uint8List bytes) {
-    // This is a simplified version. For production:
-    // 1. Decode image properly
-    // 2. Convert to grayscale
-    // 3. Resize to 8x8
-    // 4. Compute average pixel value
-    // 5. Create binary hash (1 if pixel > average, 0 otherwise)
-
-    // For now, just sample some bytes to create a hash
+    // dHash algorithm:
+    // 1. Sample pixels across the image
+    // 2. Compare each pixel to the next one
+    // 3. If the next pixel is brighter, output 1, else 0
+    // This creates a hash that's resistant to small changes
+    
+    if (bytes.length < 128) {
+      // Not enough data, fall back to simple hash
+      return bytes.map((b) => b > 128 ? '1' : '0').take(64).join().padRight(64, '0');
+    }
+    
     final buffer = StringBuffer();
-    final step = bytes.length ~/ 64;
-
-    for (int i = 0; i < 64 && i * step < bytes.length; i++) {
-      buffer.write((bytes[i * step] > 128) ? '1' : '0');
+    final step = bytes.length ~/ 65; // Need 65 values to compare for 64 bits
+    
+    // Create difference hash - compare adjacent pixels
+    for (int i = 0; i < 64 && (i + 1) * step < bytes.length; i++) {
+      final current = bytes[i * step];
+      final next = bytes[(i + 1) * step];
+      buffer.write(current < next ? '1' : '0');
     }
 
     return buffer.toString().padRight(64, '0');

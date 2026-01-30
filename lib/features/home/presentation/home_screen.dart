@@ -23,40 +23,61 @@ class HomeScreen extends ConsumerWidget {
     return MainScaffold(
       currentIndex: 0,
       child: Scaffold(
-        backgroundColor: AppColors.snow,
+        // backgroundColor: removed to use theme default
         appBar: AppBar(
-          backgroundColor: AppColors.snow,
+          // backgroundColor: removed to use theme default
           elevation: 0,
           toolbarHeight: 70,
-          title: const Column(
+          title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Swipe to Clean',
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.5,
-                ),
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      image: const DecorationImage(
+                        image: AssetImage('assets/images/logo.png'),
+                        fit: BoxFit.cover,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Swipe to Clean',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 24, // Slightly smaller to fit better
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: 2),
-              Text(
-                'Free up space with a swipe',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
+              const SizedBox(height: 2),
+              const Padding(
+                padding: EdgeInsets.only(left: 52), // Align with text start
+                child: Text(
+                  'Free up space with a swipe',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ),
             ],
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings_outlined, color: AppColors.textPrimary),
-              onPressed: () => context.push('/settings'),
-            ),
-          ],
+
         ),
         body: RefreshIndicator(
           color: AppColors.primary,
@@ -171,7 +192,7 @@ class HomeScreen extends ConsumerWidget {
       crossAxisCount: 2,
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
-      childAspectRatio: 1.5,
+      childAspectRatio: 1.75,
       children: [
         _StatCard(
           icon: Icons.photo_library,
@@ -183,7 +204,7 @@ class HomeScreen extends ConsumerWidget {
           icon: Icons.videocam,
           value: '$videos',
           label: 'Videos',
-          color: const Color(0xFF8B5CF6),
+          color: const Color(0xFF3B82F6),
         ),
         _StatCard(
           icon: Icons.today,
@@ -213,9 +234,9 @@ class _StatsGridSkeleton extends StatelessWidget {
       crossAxisCount: 2,
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
-      childAspectRatio: 1.5,
+      childAspectRatio: 1.9,
       children: List.generate(4, (_) => const CardSkeleton(
-        height: 80,
+        height: 60,
         borderRadius: BorderRadius.all(Radius.circular(16)),
       )),
     );
@@ -240,7 +261,7 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.divider),
         boxShadow: [
@@ -271,10 +292,10 @@ class _StatCard extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                   ),
                 ),
               ),
@@ -317,7 +338,7 @@ class _QuickActionCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.divider),
           boxShadow: [
@@ -345,10 +366,10 @@ class _QuickActionCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).textTheme.titleMedium?.color,
                   ),
                 ),
                 Text(

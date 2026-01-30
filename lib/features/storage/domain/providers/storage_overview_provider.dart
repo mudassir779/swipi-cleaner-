@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_manager/photo_manager.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/services/photo_service.dart';
 import '../../../home/domain/providers/home_provider.dart';
 import '../models/storage_category.dart';
@@ -69,25 +70,25 @@ final storageOverviewProvider = FutureProvider<StorageOverview>((ref) async {
       StorageCategory(
         name: 'Photos',
         icon: Icons.photo_camera_rounded,
-        color: const Color(0xFF7C3AED), // violet-600
+        color: AppColors.primary, // SkyBlue
         bytes: estimatedPhotosNoScreenshotsBytes,
       ),
       StorageCategory(
         name: 'Videos',
         icon: Icons.videocam_rounded,
-        color: const Color(0xFF8B5CF6), // violet-500
+        color: const Color(0xFF3B82F6), // Blue
         bytes: estimatedVideosBytes,
       ),
       StorageCategory(
         name: 'Screenshots',
         icon: Icons.image_rounded,
-        color: const Color(0xFFA855F7), // purple-500
+        color: const Color(0xFF06B6D4), // Cyan
         bytes: estimatedScreenshotsBytes,
       ),
       StorageCategory(
         name: 'Other',
         icon: Icons.folder_rounded,
-        color: const Color(0xFF6D28D9), // violet-700
+        color: const Color(0xFF64748B), // Slate
         bytes: otherBytes,
       ),
     ],

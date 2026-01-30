@@ -2,6 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'app_colors.dart';
 
+/// Dark theme specific colors
+class _DarkColors {
+  static const Color background = Color(0xFF0F0F17);
+  static const Color surface = Color(0xFF1A1A25);
+  static const Color cardBackground = Color(0xFF252535);
+  static const Color textPrimary = Color(0xFFF5F5F7);
+  static const Color textSecondary = Color(0xFF9CA3AF);
+  static const Color divider = Color(0xFF2D2D3A);
+}
+
 /// Material Design 3 theme for Swipe to Clean Storage app
 class AppTheme {
   static ThemeData get darkTheme {
@@ -12,40 +22,40 @@ class AppTheme {
       // Color scheme
       colorScheme: ColorScheme.dark(
         primary: AppColors.primary,
-        secondary: AppColors.teal,
+        secondary: AppColors.secondary,
         tertiary: AppColors.pink,
-        surface: AppColors.surface,
+        surface: _DarkColors.surface,
         error: AppColors.red,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
-        onSurface: AppColors.textPrimary,
+        onSurface: _DarkColors.textPrimary,
         onError: Colors.white,
-        surfaceContainerHighest: AppColors.surfaceLight,
-        outline: AppColors.border,
+        surfaceContainerHighest: _DarkColors.cardBackground,
+        outline: _DarkColors.divider,
       ),
 
       // Scaffold
-      scaffoldBackgroundColor: AppColors.background,
+      scaffoldBackgroundColor: _DarkColors.background,
 
       // AppBar
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: _DarkColors.background,
+        foregroundColor: _DarkColors.textPrimary,
         elevation: 0,
         centerTitle: true,
         systemOverlayStyle: SystemUiOverlayStyle.light,
         titleTextStyle: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
+          color: _DarkColors.textPrimary,
         ),
       ),
 
       // Card
       cardTheme: CardThemeData(
-        color: AppColors.surface,
+        color: _DarkColors.cardBackground,
         elevation: 4,
-        shadowColor: Colors.black.withValues(alpha: 0.3),
+        shadowColor: Colors.black.withValues(alpha: 0.5),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),

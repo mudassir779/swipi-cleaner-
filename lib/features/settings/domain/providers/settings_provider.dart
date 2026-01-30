@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/services/notification_service.dart';
 import '../../../../shared/services/storage_service.dart';
 import '../models/settings_state.dart';
 
@@ -99,6 +100,14 @@ class SettingsController extends AsyncNotifier<SettingsState> {
     if (current == null) return;
     state = AsyncData(current.copyWith(cleaningReminders: v));
     await _storage.setCleaningReminders(v);
+    
+    // Trigger notification service
+    final notificationService = NotificationService();
+    await notificationService.initialize();
+    if (v) {
+      await notificationService.requestPermissions();
+    }
+    await notificationService.setCleanupRemindersEnabled(v);
   }
 
   Future<void> setStorageAlerts(bool v) async {
@@ -106,6 +115,14 @@ class SettingsController extends AsyncNotifier<SettingsState> {
     if (current == null) return;
     state = AsyncData(current.copyWith(storageAlerts: v));
     await _storage.setStorageAlerts(v);
+    
+    // Trigger notification service
+    final notificationService = NotificationService();
+    await notificationService.initialize();
+    if (v) {
+      await notificationService.requestPermissions();
+    }
+    await notificationService.setStorageAlertsEnabled(v);
   }
 
   Future<void> clearCache() async {

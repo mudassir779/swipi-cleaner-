@@ -9,13 +9,35 @@ import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/switch_list_tile_row.dart';
 import '../domain/providers/settings_provider.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final settingsAsync = ref.watch(settingsProvider);
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
 
+class _SettingsScreenState extends ConsumerState<SettingsScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -26,283 +48,362 @@ class SettingsScreen extends ConsumerWidget {
         title: const Text('Settings'),
       ),
       body: SafeArea(
-        child: settingsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                'Unable to load settings.\n$e',
-                style: const TextStyle(color: AppColors.textSecondary),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-          data: (s) {
-            return CustomScrollView(
-              slivers: [
-                const SliverToBoxAdapter(child: SizedBox(height: 8)),
-
-                // APPEARANCE
-                const SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _StickyHeaderDelegate(title: 'Appearance'),
-                ),
-                SliverToBoxAdapter(
-                  child: Column(
-                    children: [
-                      SwitchListTileRow(
-                        leadingIcon: Icons.dark_mode_rounded,
-                        title: 'Dark Mode',
-                        subtitle: s.isDarkMode ? 'On' : 'Off',
-                        value: s.isDarkMode,
-                        onChanged: (v) => ref.read(settingsProvider.notifier).setDarkMode(v),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // STORAGE
-                const SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _StickyHeaderDelegate(title: 'Storage'),
-                ),
-                SliverToBoxAdapter(
-                  child: Column(
-                    children: [
-                      _SwitchChevronRow(
-                        title: 'Auto-Clean Schedule',
-                        subtitle: 'Clean storage weekly',
-                        value: s.autoCleanWeekly,
-                        onChanged: (v) => ref.read(settingsProvider.notifier).setAutoCleanWeekly(v),
-                      ),
-                      const Divider(height: 1),
-                      ChevronListTile(
-                        leadingIcon: Icons.storage_rounded,
-                        title: 'Storage Threshold',
-                        subtitle: 'Clean when storage > ${s.storageThresholdPct}%',
-                        onTap: () => _showThresholdSheet(context, s.storageThresholdPct, (v) {
-                          ref.read(settingsProvider.notifier).setStorageThresholdPct(v);
-                        }),
-                      ),
-                      const Divider(height: 1),
-                      SwitchListTileRow(
-                        leadingIcon: Icons.videocam_rounded,
-                        title: 'Include Videos',
-                        subtitle: 'Scan videos for duplicates',
-                        value: s.includeVideos,
-                        onChanged: (v) => ref.read(settingsProvider.notifier).setIncludeVideos(v),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // PRIVACY & SECURITY
-                const SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _StickyHeaderDelegate(title: 'Privacy & Security'),
-                ),
-                SliverToBoxAdapter(
-                  child: Column(
-                    children: [
-                      SwitchListTileRow(
-                        leadingIcon: Icons.lock_rounded,
-                        title: 'Face Recognition',
-                        subtitle: 'Organize by faces',
-                        value: s.faceRecognition,
-                        onChanged: (v) => ref.read(settingsProvider.notifier).setFaceRecognition(v),
-                      ),
-                      const Divider(height: 1),
-                      SwitchListTileRow(
-                        leadingIcon: Icons.shield_rounded,
-                        title: 'Secure Deletion',
-                        subtitle: 'Overwrite deleted files',
-                        value: s.secureDeletion,
-                        onChanged: (v) => ref.read(settingsProvider.notifier).setSecureDeletion(v),
-                      ),
-                      const Divider(height: 1),
-                      ChevronListTile(
-                        leadingIcon: Icons.phonelink_lock_rounded,
-                        title: 'App Lock',
-                        subtitle: s.appLockEnabled ? 'Enabled' : 'Disabled',
-                        onTap: () => ref.read(settingsProvider.notifier).setAppLockEnabled(!s.appLockEnabled),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // BACKUP & SYNC
-                const SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _StickyHeaderDelegate(title: 'Backup & Sync'),
-                ),
-                SliverToBoxAdapter(
-                  child: Column(
-                    children: [
-                      SwitchListTileRow(
-                        leadingIcon: Icons.cloud_rounded,
-                        title: 'Cloud Backup',
-                        subtitle: 'Secure backup of all photos',
-                        value: s.cloudBackup,
-                        onChanged: (v) => ref.read(settingsProvider.notifier).setCloudBackup(v),
-                      ),
-                      const Divider(height: 1),
-                      ChevronListTile(
-                        leadingIcon: Icons.hd_rounded,
-                        title: 'Backup Quality',
-                        subtitle: s.backupQuality,
-                        onTap: () => _showStringPicker(
-                          context,
-                          title: 'Backup Quality',
-                          options: const ['Original', 'High', 'Medium', 'Low'],
-                          current: s.backupQuality,
-                          onSelected: (v) => ref.read(settingsProvider.notifier).setBackupQuality(v),
+        child: Consumer(
+          builder: (context, ref, child) {
+            final settingsAsync = ref.watch(settingsProvider);
+            
+            return settingsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, stack) {
+                // Log error to console for debugging
+                debugPrint('Settings Error: $e\n$stack');
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Unable to load settings',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                      ),
-                      const Divider(height: 1),
-                      ChevronListTile(
-                        leadingIcon: Icons.sync_rounded,
-                        title: 'Sync Frequency',
-                        subtitle: s.syncFrequency,
-                        onTap: () => _showStringPicker(
-                          context,
-                          title: 'Sync Frequency',
-                          options: const ['Hourly', 'Daily', 'Weekly'],
-                          current: s.syncFrequency,
-                          onSelected: (v) => ref.read(settingsProvider.notifier).setSyncFrequency(v),
+                        const SizedBox(height: 8),
+                        Text(
+                          '$e',
+                          style: const TextStyle(color: AppColors.textSecondary),
+                          textAlign: TextAlign.center,
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                );
+              },
+              data: (s) {
+                return CustomScrollView(
+                  slivers: [
+                    const SliverToBoxAdapter(child: SizedBox(height: 8)),
 
-                // NOTIFICATIONS
-                const SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _StickyHeaderDelegate(title: 'Notifications'),
-                ),
-                SliverToBoxAdapter(
-                  child: Column(
-                    children: [
-                      SwitchListTileRow(
-                        leadingIcon: Icons.notifications_active_rounded,
-                        title: 'Cleaning Reminders',
-                        value: s.cleaningReminders,
-                        onChanged: (v) => ref.read(settingsProvider.notifier).setCleaningReminders(v),
-                      ),
-                      const Divider(height: 1),
-                      SwitchListTileRow(
-                        leadingIcon: Icons.warning_amber_rounded,
-                        title: 'Storage Alerts',
-                        value: s.storageAlerts,
-                        onChanged: (v) => ref.read(settingsProvider.notifier).setStorageAlerts(v),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // ADVANCED
-                const SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _StickyHeaderDelegate(title: 'Advanced'),
-                ),
-                SliverToBoxAdapter(
-                  child: Column(
-                    children: [
-                      ChevronListTile(
-                        leadingIcon: Icons.delete_sweep_rounded,
-                        title: 'Clear Cache',
-                        subtitle: formatBytes(s.cacheSizeBytes),
-                        showChevron: false,
-                        trailing: const Text(
-                          'Clear',
-                          style: TextStyle(
-                            color: Color(0xFFEF4444),
-                            fontWeight: FontWeight.w800,
+                    // APPEARANCE
+                    _buildAnimatedHeader(0, 'Appearance'),
+                    _buildAnimatedSection(
+                      1,
+                      Column(
+                        children: [
+                          SwitchListTileRow(
+                            leadingIcon: Icons.dark_mode_rounded,
+                            title: 'Dark Mode',
+                            subtitle: 'Easier on the eyes',
+                            value: s.isDarkMode,
+                            onChanged: (v) => ref.read(settingsProvider.notifier).setDarkMode(v),
                           ),
-                        ),
-                        onTap: () => _confirm(
-                          context,
-                          title: 'Clear Cache?',
-                          message: 'This will remove cached thumbnails and temporary data.',
-                          confirmText: 'Clear',
-                          onConfirm: () => ref.read(settingsProvider.notifier).clearCache(),
-                        ),
+                        ],
                       ),
-                      const Divider(height: 1),
-                      ChevronListTile(
-                        leadingIcon: Icons.restart_alt_rounded,
-                        title: 'Reset All Settings',
-                        subtitle: 'Restore defaults',
-                        showChevron: false,
-                        trailing: const Text(
-                          'Reset',
-                          style: TextStyle(
-                            color: Color(0xFFEF4444),
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        onTap: () => _confirm(
-                          context,
-                          title: 'Reset all settings?',
-                          message: 'This will restore all settings back to defaults.',
-                          confirmText: 'Reset',
-                          onConfirm: () => ref.read(settingsProvider.notifier).resetAllSettings(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                    ),
 
-                // ABOUT
-                const SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _StickyHeaderDelegate(title: 'About'),
-                ),
-                SliverToBoxAdapter(
-                  child: Column(
-                    children: [
-                      const ChevronListTile(
-                        leadingIcon: Icons.info_outline_rounded,
-                        title: 'Version',
-                        subtitle: '1.0.0',
-                        showChevron: false,
+                    // STORAGE
+                    _buildAnimatedHeader(2, 'Storage'),
+                    _buildAnimatedSection(
+                      3,
+                      Column(
+                        children: [
+                          _SwitchChevronRow(
+                            title: 'Auto-Clean Schedule',
+                            subtitle: 'Clean storage weekly',
+                            value: s.autoCleanWeekly,
+                            onChanged: (v) => ref.read(settingsProvider.notifier).setAutoCleanWeekly(v),
+                          ),
+                          const Divider(height: 1),
+                          ChevronListTile(
+                            leadingIcon: Icons.storage_rounded,
+                            title: 'Storage Threshold',
+                            subtitle: 'Clean when storage > ${s.storageThresholdPct}%',
+                            onTap: () => _showThresholdSheet(context, s.storageThresholdPct, (v) {
+                              ref.read(settingsProvider.notifier).setStorageThresholdPct(v);
+                            }),
+                          ),
+                          const Divider(height: 1),
+                          SwitchListTileRow(
+                            leadingIcon: Icons.videocam_rounded,
+                            title: 'Include Videos',
+                            subtitle: 'Scan videos for duplicates',
+                            value: s.includeVideos,
+                            onChanged: (v) => ref.read(settingsProvider.notifier).setIncludeVideos(v),
+                          ),
+                        ],
                       ),
-                      const Divider(height: 1),
-                      ChevronListTile(
-                        leadingIcon: Icons.privacy_tip_outlined,
-                        title: 'Privacy Policy',
-                        onTap: () => ScaffoldMessenger.of(context)
-                            .showSnackBar(const SnackBar(content: Text('Privacy Policy coming soon'))),
+                    ),
+
+                    // PRIVACY & SECURITY
+                    _buildAnimatedHeader(4, 'Privacy & Security'),
+                    _buildAnimatedSection(
+                      5,
+                      Column(
+                        children: [
+                          SwitchListTileRow(
+                            leadingIcon: Icons.lock_rounded,
+                            title: 'Face Recognition',
+                            subtitle: 'Organize by faces',
+                            value: s.faceRecognition,
+                            onChanged: (v) =>
+                                ref.read(settingsProvider.notifier).setFaceRecognition(v),
+                          ),
+                          const Divider(height: 1),
+                          SwitchListTileRow(
+                            leadingIcon: Icons.shield_rounded,
+                            title: 'Secure Deletion',
+                            subtitle: 'Overwrite deleted files',
+                            value: s.secureDeletion,
+                            onChanged: (v) =>
+                                ref.read(settingsProvider.notifier).setSecureDeletion(v),
+                          ),
+                          const Divider(height: 1),
+                          ChevronListTile(
+                            leadingIcon: Icons.phonelink_lock_rounded,
+                            title: 'App Lock',
+                            subtitle: s.appLockEnabled ? 'Enabled' : 'Disabled',
+                            onTap: () => ref
+                                .read(settingsProvider.notifier)
+                                .setAppLockEnabled(!s.appLockEnabled),
+                          ),
+                        ],
                       ),
-                      const Divider(height: 1),
-                      ChevronListTile(
-                        leadingIcon: Icons.description_outlined,
-                        title: 'Terms of Service',
-                        onTap: () => ScaffoldMessenger.of(context)
-                            .showSnackBar(const SnackBar(content: Text('Terms coming soon'))),
+                    ),
+
+                    // BACKUP & SYNC
+                    _buildAnimatedHeader(6, 'Backup & Sync'),
+                    _buildAnimatedSection(
+                      7,
+                      Column(
+                        children: [
+                          SwitchListTileRow(
+                            leadingIcon: Icons.cloud_rounded,
+                            title: 'Cloud Backup',
+                            subtitle: 'Secure backup of all photos',
+                            value: s.cloudBackup,
+                            onChanged: (v) =>
+                                ref.read(settingsProvider.notifier).setCloudBackup(v),
+                          ),
+                          const Divider(height: 1),
+                          ChevronListTile(
+                            leadingIcon: Icons.hd_rounded,
+                            title: 'Backup Quality',
+                            subtitle: s.backupQuality,
+                            onTap: () => _showStringPicker(
+                              context,
+                              title: 'Backup Quality',
+                              options: const ['Original', 'High', 'Medium', 'Low'],
+                              current: s.backupQuality,
+                              onSelected: (v) =>
+                                  ref.read(settingsProvider.notifier).setBackupQuality(v),
+                            ),
+                          ),
+                          const Divider(height: 1),
+                          ChevronListTile(
+                            leadingIcon: Icons.sync_rounded,
+                            title: 'Sync Frequency',
+                            subtitle: s.syncFrequency,
+                            onTap: () => _showStringPicker(
+                              context,
+                              title: 'Sync Frequency',
+                              options: const ['Hourly', 'Daily', 'Weekly'],
+                              current: s.syncFrequency,
+                              onSelected: (v) =>
+                                  ref.read(settingsProvider.notifier).setSyncFrequency(v),
+                            ),
+                          ),
+                        ],
                       ),
-                      const Divider(height: 1),
-                      ChevronListTile(
-                        leadingIcon: Icons.badge_outlined,
-                        title: 'Licenses',
-                        onTap: () => showLicensePage(context: context),
+                    ),
+
+                    // NOTIFICATIONS
+                    _buildAnimatedHeader(8, 'Notifications'),
+                    _buildAnimatedSection(
+                      9,
+                      Column(
+                        children: [
+                          SwitchListTileRow(
+                            leadingIcon: Icons.notifications_active_rounded,
+                            title: 'Cleaning Reminders',
+                            value: s.cleaningReminders,
+                            onChanged: (v) =>
+                                ref.read(settingsProvider.notifier).setCleaningReminders(v),
+                          ),
+                          const Divider(height: 1),
+                          SwitchListTileRow(
+                            leadingIcon: Icons.warning_amber_rounded,
+                            title: 'Storage Alerts',
+                            value: s.storageAlerts,
+                            onChanged: (v) =>
+                                ref.read(settingsProvider.notifier).setStorageAlerts(v),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 28),
-                      const Icon(Icons.photo_library_outlined, color: AppColors.textSecondary),
-                      const SizedBox(height: 10),
-                      const Text(
-                        '© 2026 Swipe to Clean',
-                        style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                    ),
+
+                    // ADVANCED
+                    _buildAnimatedHeader(10, 'Advanced'),
+                    _buildAnimatedSection(
+                      11,
+                      Column(
+                        children: [
+                          ChevronListTile(
+                            leadingIcon: Icons.delete_sweep_rounded,
+                            title: 'Clear Cache',
+                            subtitle: formatBytes(s.cacheSizeBytes),
+                            showChevron: false,
+                            trailing: const Text(
+                              'Clear',
+                              style: TextStyle(
+                                color: Color(0xFFEF4444),
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            onTap: () => _confirm(
+                              context,
+                              title: 'Clear Cache?',
+                              message: 'This will remove cached thumbnails and temporary data.',
+                              confirmText: 'Clear',
+                              onConfirm: () =>
+                                  ref.read(settingsProvider.notifier).clearCache(),
+                            ),
+                          ),
+                          const Divider(height: 1),
+                          ChevronListTile(
+                            leadingIcon: Icons.restart_alt_rounded,
+                            title: 'Reset All Settings',
+                            subtitle: 'Restore defaults',
+                            showChevron: false,
+                            trailing: const Text(
+                              'Reset',
+                              style: TextStyle(
+                                color: Color(0xFFEF4444),
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            onTap: () => _confirm(
+                              context,
+                              title: 'Reset all settings?',
+                              message: 'This will restore all settings back to defaults.',
+                              confirmText: 'Reset',
+                              onConfirm: () =>
+                                  ref.read(settingsProvider.notifier).resetAllSettings(),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+
+                    // ABOUT
+                    _buildAnimatedHeader(12, 'About'),
+                    _buildAnimatedSection(
+                      13,
+                      Column(
+                        children: [
+                          const ChevronListTile(
+                            leadingIcon: Icons.info_outline_rounded,
+                            title: 'Version',
+                            subtitle: '1.0.0',
+                            showChevron: false,
+                          ),
+                          const Divider(height: 1),
+                          ChevronListTile(
+                            leadingIcon: Icons.privacy_tip_outlined,
+                            title: 'Privacy Policy',
+                            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Privacy Policy coming soon'))),
+                          ),
+                          const Divider(height: 1),
+                          ChevronListTile(
+                            leadingIcon: Icons.description_outlined,
+                            title: 'Terms of Service',
+                            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Terms coming soon'))),
+                          ),
+                          const Divider(height: 1),
+                          ChevronListTile(
+                            leadingIcon: Icons.badge_outlined,
+                            title: 'Licenses',
+                            onTap: () => showLicensePage(context: context),
+                          ),
+                          const SizedBox(height: 28),
+                          const Icon(Icons.photo_library_outlined,
+                              color: AppColors.textSecondary),
+                          const SizedBox(height: 10),
+                          const Text(
+                            '© 2026 Swipe to Clean',
+                            style: TextStyle(
+                                color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedHeader(int index, String title) {
+    return SliverPersistentHeader(
+      pinned: true,
+      delegate: _StickyHeaderDelegate(title: title),
+    );
+  }
+
+  Widget _buildAnimatedSection(int index, Widget child) {
+    return SliverToBoxAdapter(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          // Calculate delay based on index, but ensure it never exceeds valid range
+          // Using smaller step (0.05) to fit more items, and clamping start time
+          final double begin = (index * 0.05).clamp(0.0, 0.6);
+          final double end = (begin + 0.4).clamp(0.0, 1.0);
+          
+          final slideAnimation = Tween<Offset>(
+            begin: const Offset(0, 0.2),
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(
+              parent: _controller,
+              curve: Interval(
+                begin,
+                end,
+                curve: Curves.easeOutCubic,
+              ),
+            ),
+          );
+
+          final fadeAnimation = Tween<double>(
+            begin: 0.0,
+            end: 1.0,
+          ).animate(
+            CurvedAnimation(
+              parent: _controller,
+              curve: Interval(
+                begin,
+                end,
+                curve: Curves.easeOut,
+              ),
+            ),
+          );
+
+          return FadeTransition(
+            opacity: fadeAnimation,
+            child: SlideTransition(
+              position: slideAnimation,
+              child: child,
+            ),
+          );
+        },
+        child: child,
       ),
     );
   }
@@ -325,7 +426,8 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  bool shouldRebuild(covariant _StickyHeaderDelegate oldDelegate) => oldDelegate.title != title;
+  bool shouldRebuild(covariant _StickyHeaderDelegate oldDelegate) =>
+      oldDelegate.title != title;
 }
 
 class _SwitchChevronRow extends StatelessWidget {
@@ -388,7 +490,9 @@ Future<void> _confirm(
       title: Text(title),
       content: Text(message),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+        TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel')),
         ElevatedButton(
           onPressed: () => Navigator.pop(ctx, true),
           child: Text(confirmText),
@@ -416,7 +520,8 @@ Future<void> _showStringPicker(
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+            child: Text(title,
+                style: const TextStyle(fontWeight: FontWeight.w800)),
           ),
           for (final option in options)
             ListTile(
@@ -447,14 +552,17 @@ Future<void> _showThresholdSheet(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Storage Threshold', style: TextStyle(fontWeight: FontWeight.w900)),
+            const Text('Storage Threshold',
+                style: TextStyle(fontWeight: FontWeight.w900)),
             const SizedBox(height: 10),
             StatefulBuilder(
               builder: (context, setState) => Column(
                 children: [
                   Text(
                     'Clean when storage > $temp%',
-                    style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w700),
                   ),
                   Slider(
                     value: temp.toDouble(),
@@ -483,4 +591,3 @@ Future<void> _showThresholdSheet(
   );
   if (res != null) onSelected(res);
 }
-

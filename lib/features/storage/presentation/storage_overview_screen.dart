@@ -46,8 +46,11 @@ class StorageOverviewScreen extends ConsumerWidget {
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(24),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFF5F3FF), Color(0xFFF3E8FF)],
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primary.withValues(alpha: 0.1),
+                            AppColors.primary.withValues(alpha: 0.05),
+                          ],
                         ),
                         border: Border.all(color: AppColors.divider),
                       ),
@@ -55,7 +58,7 @@ class StorageOverviewScreen extends ConsumerWidget {
                         children: [
                           AnimatedDonutChart(
                             progress: pct,
-                            gradient: const [Color(0xFF9C27B0), Color(0xFF7C4DFF), Color(0xFF9C27B0)],
+                            gradient: AppColors.gradientPrimary,
                             centerValue: '${(pct * 100).round()}%',
                             centerLabel: 'used',
                           ),
@@ -108,7 +111,7 @@ class StorageOverviewScreen extends ConsumerWidget {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(18),
-                        color: const Color(0xFFF5F3FF),
+                        color: AppColors.primary.withValues(alpha: 0.05),
                         border: Border.all(color: AppColors.divider),
                       ),
                       child: Column(
@@ -148,7 +151,7 @@ class StorageOverviewScreen extends ConsumerWidget {
                   child: SafeArea(
                     top: false,
                     child: PrimaryGradientButton(
-                      colors: const [Color(0xFF7C3AED), Color(0xFF5B21B6)],
+                      colors: AppColors.gradientPrimary,
                       onPressed: () {
                         // Drive users into the cleanup flows.
                         Navigator.of(context).maybePop();

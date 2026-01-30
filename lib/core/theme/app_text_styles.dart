@@ -1,55 +1,78 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
-/// Typography styles following Material Design 3 and matching React Native design
+/// Typography styles following the design specification
 class AppTextStyles {
-  // Title styles
-  static const TextStyle title = TextStyle(
-    fontSize: 34,
+  // App title (SF Pro Display, Bold, 32-34px)
+  static const TextStyle appTitle = TextStyle(
+    fontSize: 32,
     fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+    height: 1.2,
+    letterSpacing: -0.5,
+  );
+
+  // Screen titles (SF Pro Display, Semibold, 24-28px)
+  static const TextStyle screenTitle = TextStyle(
+    fontSize: 28,
+    fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
     height: 1.2,
   );
 
+  // Legacy alias for title
+  static const TextStyle title = appTitle;
+
+  // Subtitle
   static const TextStyle subtitle = TextStyle(
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
     height: 1.5,
   );
 
-  // Section header
+  // Section headers (SF Pro Text, Medium, 16-18px)
   static const TextStyle sectionHeader = TextStyle(
     fontSize: 13,
     fontWeight: FontWeight.w600,
-    color: AppColors.sectionHeader,
+    color: AppColors.textSecondary,
     letterSpacing: 0.5,
     height: 1.4,
   );
 
-  // Card styles
+  // Card title
   static const TextStyle cardTitle = TextStyle(
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
     height: 1.3,
   );
 
+  // Card subtitle
   static const TextStyle cardSubtitle = TextStyle(
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
     height: 1.4,
   );
 
-  // Stat styles
+  // Large stat numbers (SF Pro Display, Bold, 48-60px)
+  static const TextStyle statLarge = TextStyle(
+    fontSize: 48,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+    height: 1.1,
+  );
+
+  // Medium stat numbers
   static const TextStyle statValue = TextStyle(
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
     height: 1.2,
   );
 
+  // Stat labels
   static const TextStyle statLabel = TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.w400,
@@ -57,7 +80,7 @@ class AppTextStyles {
     height: 1.3,
   );
 
-  // Body text
+  // Body text (SF Pro Text, Regular, 15-16px)
   static const TextStyle body = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w400,
@@ -65,6 +88,7 @@ class AppTextStyles {
     height: 1.5,
   );
 
+  // Body small
   static const TextStyle bodySmall = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w400,
@@ -76,7 +100,14 @@ class AppTextStyles {
   static const TextStyle button = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: Colors.white,
     letterSpacing: 0.5,
+  );
+
+  // Button text small
+  static const TextStyle buttonSmall = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: Colors.white,
   );
 }
