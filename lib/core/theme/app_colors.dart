@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 class AppColors {
   // Base colors (white/gray)
   static const Color background = Color(0xFFFFFFFF); // White
+  static const Color snow = Color(0xFFFFFAFA); // Snow
+  static const Color seaShell = Color(0xFFFFF5EE); // SeaShell
+  static const Color slateIcon = Color(0xFF7C8DB5); // Slate Blue for icons
   static const Color surface = Color(0xFFF9FAFB); // Light gray
-  static const Color cardBackground = Color(0xFFF9FAFB); // Light gray
+  static const Color cardBackground = seaShell;
 
   // Text colors
   static const Color textPrimary = Color(0xFF111827); // Dark gray

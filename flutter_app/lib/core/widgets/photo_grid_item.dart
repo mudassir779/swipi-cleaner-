@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
+import 'package:shimmer/shimmer.dart';
+
 import '../theme/app_colors.dart';
 
-/// Grid item for displaying a photo thumbnail with entrance animation
-class PhotoGridItem extends StatefulWidget {
+/// Grid item for displaying a photo thumbnail (with shimmer + fade-in).
+class PhotoGridItem extends StatelessWidget {
   final AssetEntity asset;
   final bool isSelected;
   final VoidCallback onTap;
@@ -21,100 +23,117 @@ class PhotoGridItem extends StatefulWidget {
   });
 
   @override
-  State<PhotoGridItem> createState() => _PhotoGridItemState();
-}
-
-class _PhotoGridItemState extends State<PhotoGridItem> {
-  bool _isVisible = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Staggered entrance animation
-    final delay = (widget.index * 20).clamp(0, 200); // Max 200ms delay
-    Future.delayed(Duration(milliseconds: delay), () {
-      if (mounted) {
-        setState(() => _isVisible = true);
-      }
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return RepaintBoundary(
-      child: AnimatedOpacity(
-        opacity: _isVisible ? 1.0 : 0.0,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        child: AnimatedScale(
-          scale: _isVisible ? 1.0 : 0.95,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          child: GestureDetector(
-            onTap: widget.onTap,
-            onLongPress: widget.onLongPress,
+    return GestureDetector(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Photo thumbnail
+                Shimmer.fromColors(
+                  baseColor: AppColors.divider.withValues(alpha: 0.45),
+                  highlightColor: AppColors.surface.withValues(alpha: 0.9),
+                  child: Container(color: AppColors.divider),
+                ),
                 Image(
                   image: AssetEntityImageProvider(
-                    widget.asset,
+                    asset,
                     isOriginal: false,
-                    thumbnailSize: const ThumbnailSize(200, 200),
+                    thumbnailSize: ThumbnailSize(360, 360),
                   ),
                   fit: BoxFit.cover,
+                  frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                    if (wasSynchronouslyLoaded) return child;
+                    return AnimatedOpacity(
+                      opacity: frame == null ? 0 : 1,
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOut,
+                      child: child,
+                    );
+                  },
                 ),
-
-                // Video duration indicator
-                if (widget.asset.type == AssetType.video)
-                  Positioned(
-                    bottom: 4,
-                    right: 4,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.play_arrow,
-                            color: Colors.white,
-                            size: 12,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            _formatDuration(widget.asset.videoDuration),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                // Selection overlay
-                if (widget.isSelected)
-                  Container(
-                    color: AppColors.red.withValues(alpha: 0.4),
-                    child: const Center(
-                      child: Icon(
-                        Icons.check_circle,
-                        color: Colors.white,
-                        size: 32,
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
-        ),
+
+          // Video duration indicator
+          if (asset.type == AssetType.video)
+            Positioned(
+              bottom: 4,
+              right: 4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.play_arrow,
+                      color: Colors.white,
+                      size: 12,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      _formatDuration(asset.videoDuration),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // Selection checkmark
+          Positioned(
+            top: 6,
+            right: 6,
+            child: AnimatedScale(
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOutBack,
+              scale: isSelected ? 1 : 0.9,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 160),
+                opacity: isSelected ? 1 : 0,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.18),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          if (isSelected)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Container(color: AppColors.primary.withValues(alpha: 0.16)),
+            ),
+        ],
       ),
     );
   }
@@ -125,3 +144,4 @@ class _PhotoGridItemState extends State<PhotoGridItem> {
     return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 }
+

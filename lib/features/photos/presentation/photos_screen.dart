@@ -4,7 +4,11 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/photo_grid_item.dart';
+import '../../../core/widgets/skeleton_loading.dart';
+import '../../../app/main_scaffold.dart';
 import '../domain/providers/month_photos_provider.dart';
+import '../domain/providers/delete_queue_provider.dart';
+import '../domain/providers/photo_selection_provider.dart';
 import 'widgets/app_drawer.dart';
 
 /// Photos screen with month-by-month organization
@@ -14,36 +18,60 @@ class PhotosScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final monthGroupsAsync = ref.watch(monthPhotosProvider);
+    final selection = ref.watch(photoSelectionProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return MainScaffold(
+      currentIndex: 1,
+      child: Scaffold(
+      backgroundColor: AppColors.snow,
+      drawerScrimColor: Colors.black.withValues(alpha: 0.45),
       drawer: const AppDrawer(),
       floatingActionButton: _buildQuickCleanButton(context, ref),
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.snow,
         elevation: 0,
         toolbarHeight: 60,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: AppColors.textPrimary, size: 24),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        title: const Text(
-          'Photos',
-          style: TextStyle(
+        leading: selection.isSelectionMode
+            ? IconButton(
+                icon: const Icon(Icons.close, color: AppColors.textPrimary, size: 24),
+                onPressed: () => ref.read(photoSelectionProvider.notifier).exitSelectionMode(),
+                tooltip: 'Exit selection',
+              )
+            : Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu, color: AppColors.textPrimary, size: 24),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+              ),
+        title: Text(
+          selection.isSelectionMode ? '${selection.count} Selected' : 'Photos',
+          style: const TextStyle(
             color: AppColors.textPrimary,
             fontSize: 34,
             fontWeight: FontWeight.bold,
             letterSpacing: -0.5,
           ),
         ),
+        actions: selection.isSelectionMode
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: AppColors.red),
+                  tooltip: 'Add to delete queue',
+                  onPressed: selection.count == 0
+                      ? null
+                      : () {
+                          ref.read(deleteQueueProvider.notifier).addAll(selection.selectedIds.toList());
+                          ref.read(photoSelectionProvider.notifier).exitSelectionMode();
+                          context.push('/confirm-delete');
+                        },
+                ),
+              ]
+            : null,
       ),
       body: monthGroupsAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(
-            color: AppColors.primary,
-          ),
+        loading: () => const Padding(
+          padding: EdgeInsets.all(2),
+          child: PhotoGridSkeleton(itemCount: 24),
         ),
         error: (error, stack) => Center(
           child: Padding(
@@ -114,12 +142,14 @@ class PhotosScreen extends ConsumerWidget {
               slivers: [
                 // Build sliver grid for each month
                 for (int i = 0; i < monthGroups.length; i++)
-                  ..._buildMonthSection(context, monthGroups[i], i),
+                  ..._buildMonthSection(context, ref, monthGroups[i], i),
+                const SliverToBoxAdapter(child: SizedBox(height: 96)),
               ],
             ),
           );
         },
       ),
+    ),
     );
   }
 
@@ -147,13 +177,14 @@ class PhotosScreen extends ConsumerWidget {
         );
       },
       loading: () => null,
-      error: (_, __) => null,
+      error: (error, stack) => null,
     );
   }
 
   /// Build month section with sticky header and photo grid
-  List<Widget> _buildMonthSection(BuildContext context, monthGroup, int index) {
+  List<Widget> _buildMonthSection(BuildContext context, WidgetRef ref, monthGroup, int index) {
     final isEmpty = monthGroup.photoCount == 0;
+    final selection = ref.watch(photoSelectionProvider);
 
     return [
       // Sticky month header
@@ -179,14 +210,23 @@ class PhotosScreen extends ConsumerWidget {
             delegate: SliverChildBuilderDelegate(
               (context, photoIndex) {
                 final photo = monthGroup.photos[photoIndex];
+                final isSelected = selection.selectedIds.contains(photo.id);
                 return PhotoGridItem(
                   asset: photo.asset,
-                  isSelected: false,
+                  isSelected: isSelected,
                   onTap: () {
-                    // Navigate to swipe review starting from this photo
-                    context.push(
-                      '/swipe-review?month=${monthGroup.monthKey}&start=$photoIndex',
-                    );
+                    if (selection.isSelectionMode) {
+                      ref.read(photoSelectionProvider.notifier).toggle(photo.id);
+                      return;
+                    }
+                    context.push('/swipe-review?month=${monthGroup.monthKey}&start=$photoIndex');
+                  },
+                  onLongPress: () {
+                    if (!selection.isSelectionMode) {
+                      ref.read(photoSelectionProvider.notifier).enterSelectionMode(initialId: photo.id);
+                    } else {
+                      ref.read(photoSelectionProvider.notifier).toggle(photo.id);
+                    }
                   },
                 );
               },

@@ -11,8 +11,11 @@ import '../../domain/models/photo.dart';
 import '../../domain/providers/delete_queue_provider.dart';
 import '../../domain/providers/photo_provider.dart';
 import '../../domain/providers/month_photos_provider.dart';
+import '../../domain/providers/favorites_provider.dart';
+import '../../domain/providers/category_photos_provider.dart';
 import '../widgets/floating_bubble.dart';
 import '../widgets/bin_preview_sheet.dart';
+import '../../../../core/widgets/confetti_overlay.dart';
 
 /// Swipe review screen (Tinder-style card swiper)
 class SwipeReviewScreen extends ConsumerStatefulWidget {
@@ -25,6 +28,8 @@ class SwipeReviewScreen extends ConsumerStatefulWidget {
 class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
   final CardSwiperController _controller = CardSwiperController();
   int _currentIndex = 0;
+  bool _showFavoriteToast = false;
+  bool _showConfetti = false;
 
   @override
   void initState() {
@@ -63,6 +68,10 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
       return ref.watch(randomPhotosProvider);
     } else if (filterParam == 'today') {
       return ref.watch(todayPhotosProvider);
+    } else if (filterParam == 'screenshots') {
+      return ref.watch(screenshotsProvider);
+    } else if (filterParam == 'large_videos') {
+      return ref.watch(largeVideosProvider);
     }
     return ref.watch(filteredPhotosProvider);
   }
@@ -101,15 +110,19 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
+      body: Stack(
+        children: [
+          Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
         title: Text(
           _getTitle(),
           style: const TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
           ),
         ),
         leading: IconButton(
@@ -214,36 +227,53 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
 
           // Only build CardSwiper if we have photos
           final deleteQueue = ref.watch(deleteQueueProvider);
+          final currentPhoto = photos[_currentIndex.clamp(0, photos.length - 1)];
+          final isFavorite = ref.watch(favoritesProvider).contains(currentPhoto.id);
 
           return Stack(
             children: [
               // Main content
               Column(
                 children: [
-                  // Progress indicator
+                  // Progress bar + counter + tag
                   Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    child: Column(
                       children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: LinearProgressIndicator(
-                              value: (_currentIndex + 1) / photos.length,
-                              minHeight: 6,
-                              backgroundColor: AppColors.cardBackground,
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                AppColors.primary,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(999),
+                          child: Container(
+                            height: 6,
+                            color: AppColors.divider,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: FractionallySizedBox(
+                                widthFactor: (_currentIndex + 1) / photos.length,
+                                child: Container(
+                                  decoration: const BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [Color(0xFFF59E0B), Color(0xFFF97316)],
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Text(
-                          '${_currentIndex + 1}/${photos.length}',
-                          style: AppTextStyles.body.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Text(
+                              '${_currentIndex + 1} of ${photos.length}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const Spacer(),
+                            _CategoryTag(label: _getTitle()),
+                          ],
                         ),
                       ],
                     ),
@@ -254,7 +284,13 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
                     child: CardSwiper(
                       controller: _controller,
                       cardsCount: photos.length,
-                      numberOfCardsDisplayed: photos.length >= 2 ? 2 : 1,
+                      allowedSwipeDirection: const AllowedSwipeDirection.only(
+                        left: true,
+                        right: true,
+                        up: true,
+                        down: false,
+                      ),
+                      numberOfCardsDisplayed: photos.length >= 3 ? 3 : (photos.length >= 2 ? 2 : 1),
                       onSwipe: (previousIndex, currentIndex, direction) {
                         final photo = photos[previousIndex];
 
@@ -264,6 +300,14 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
                           ref.read(deleteQueueProvider.notifier).add(photo.id);
                         } else if (direction == CardSwiperDirection.right) {
                           HapticFeedback.lightImpact(); // Light vibration for keep
+                        } else if (direction == CardSwiperDirection.top) {
+                          HapticFeedback.lightImpact();
+                          ref.read(favoritesProvider.notifier).toggle(photo.id);
+                          setState(() => _showFavoriteToast = true);
+                          Future<void>.delayed(const Duration(milliseconds: 900), () {
+                            if (!mounted) return;
+                            setState(() => _showFavoriteToast = false);
+                          });
                         }
 
                         setState(() {
@@ -274,6 +318,7 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
 
                         // Check if we've reviewed all photos
                         if (currentIndex == null) {
+                          setState(() => _showConfetti = true);
                           _showCompletionDialog(context);
                         }
 
@@ -286,8 +331,33 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
                     ),
                   ),
 
-                  // Gesture-only - no action buttons for cleaner experience
-                  const SizedBox(height: 24),
+                  // Action buttons (backup to gestures)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _CircleActionButton(
+                          icon: Icons.close,
+                          color: const Color(0xFFEF4444),
+                          onPressed: () => _controller.swipe(CardSwiperDirection.left),
+                          size: 54,
+                        ),
+                        _CircleActionButton(
+                          icon: Icons.check,
+                          color: const Color(0xFF22C55E),
+                          onPressed: () => _controller.swipe(CardSwiperDirection.right),
+                          size: 68,
+                        ),
+                        _CircleActionButton(
+                          icon: isFavorite ? Icons.star : Icons.star_border,
+                          color: const Color(0xFF3B82F6),
+                          onPressed: () => _controller.swipe(CardSwiperDirection.top),
+                          size: 54,
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
 
@@ -301,9 +371,47 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
                     onTap: () => _showBinBottomSheet(),
                   ),
                 ),
+
+              // Favorite toast
+              if (_showFavoriteToast)
+                Positioned(
+                  top: 90,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.75),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.star, color: Colors.white, size: 18),
+                          SizedBox(width: 8),
+                          Text(
+                            'Favorited',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
             ],
           );
         },
+      ),
+    ),
+          // Confetti overlay
+          ConfettiOverlay(
+            show: _showConfetti,
+            onComplete: () {
+              // Optional: navigate away automatically?
+            },
+          ),
+        ],
       ),
     );
   }
@@ -409,6 +517,7 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
   Widget _buildPhotoCardWithOverlay(Photo photo, double horizontalOffset, double verticalOffset) {
     // Calculate swipe progress (-1 to 1)
     final swipeProgress = (horizontalOffset / 100).clamp(-1.0, 1.0);
+    final upProgress = (-verticalOffset / 120).clamp(0.0, 1.0);
 
     return Stack(
       children: [
@@ -468,6 +577,38 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
                         scale: scale,
                         child: const Icon(
                           Icons.check_circle_outline,
+                          color: Colors.white,
+                          size: 120,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+        // Up swipe (favorite) - Blue overlay
+        if (upProgress > 0.12)
+          Positioned.fill(
+            child: AnimatedOpacity(
+              opacity: (upProgress * 1.2).clamp(0.0, 1.0),
+              duration: const Duration(milliseconds: 120),
+              curve: Curves.easeOutCubic,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3B82F6).withValues(alpha: 0.75),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Center(
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 1.0, end: upProgress > 0.35 ? 1.1 : 1.0),
+                    duration: const Duration(milliseconds: 100),
+                    builder: (context, scale, child) {
+                      return Transform.scale(
+                        scale: scale,
+                        child: const Icon(
+                          Icons.star_border,
                           color: Colors.white,
                           size: 120,
                         ),
@@ -565,6 +706,80 @@ class _SwipeReviewScreenState extends ConsumerState<SwipeReviewScreen> {
               child: const Text('Review & Delete'),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _CategoryTag extends StatelessWidget {
+  final String label;
+
+  const _CategoryTag({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7ED),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFFED7AA)),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Color(0xFF9A3412),
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _CircleActionButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback onPressed;
+  final double size;
+
+  const _CircleActionButton({
+    required this.icon,
+    required this.color,
+    required this.onPressed,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 1.0, end: 1.0),
+        duration: const Duration(milliseconds: 1),
+        builder: (context, scale, child) {
+          return AnimatedScale(
+            duration: const Duration(milliseconds: 90),
+            scale: 1,
+            child: Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+                border: Border.all(color: color.withValues(alpha: 0.25)),
+              ),
+              child: Icon(icon, color: color, size: size * 0.46),
+            ),
+          );
+        },
       ),
     );
   }

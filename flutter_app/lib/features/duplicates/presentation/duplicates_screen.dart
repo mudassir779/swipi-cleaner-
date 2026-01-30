@@ -5,7 +5,6 @@ import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../photos/domain/models/photo.dart';
 import '../../photos/domain/providers/delete_queue_provider.dart';
 import '../domain/models/duplicate_group.dart';
 import '../domain/providers/duplicates_provider.dart';
@@ -325,7 +324,7 @@ class DuplicatesScreen extends ConsumerWidget {
                         Positioned.fill(
                           child: Container(
                             decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.5),
+                              color: AppColors.error.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Center(

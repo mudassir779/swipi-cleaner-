@@ -8,11 +8,17 @@ import '../features/photos/presentation/screens/confirm_delete_screen.dart';
 import '../features/photos/presentation/screens/photo_details_screen.dart';
 import '../features/photos/presentation/screens/swipe_review_screen.dart';
 import '../features/duplicates/presentation/duplicates_screen.dart';
+import '../features/storage/presentation/storage_overview_screen.dart';
+import '../features/categories/presentation/categories_screen.dart';
+import '../features/settings/presentation/settings_screen.dart';
+import '../features/premium/presentation/premium_upgrade_screen.dart';
+import '../features/success/domain/models/cleanup_success_result.dart';
+import '../features/success/presentation/cleanup_success_screen.dart';
 
 /// App routing configuration using GoRouter
 class AppRouter {
   static final GoRouter router = GoRouter(
-    initialLocation: '/photos',
+    initialLocation: '/onboarding',
     routes: [
       // Onboarding
       GoRoute(
@@ -62,6 +68,92 @@ class AppRouter {
             );
           },
         ),
+      ),
+
+      GoRoute(
+        path: '/storage-stats',
+        name: 'storage-stats',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const StorageOverviewScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SharedAxisTransition(
+              animation: animation,
+              secondaryAnimation: secondaryAnimation,
+              transitionType: SharedAxisTransitionType.horizontal,
+              child: child,
+            );
+          },
+        ),
+      ),
+      GoRoute(
+        path: '/categories',
+        name: 'categories',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const CategoriesScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SharedAxisTransition(
+              animation: animation,
+              secondaryAnimation: secondaryAnimation,
+              transitionType: SharedAxisTransitionType.horizontal,
+              child: child,
+            );
+          },
+        ),
+      ),
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const SettingsScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SharedAxisTransition(
+              animation: animation,
+              secondaryAnimation: secondaryAnimation,
+              transitionType: SharedAxisTransitionType.horizontal,
+              child: child,
+            );
+          },
+        ),
+      ),
+      GoRoute(
+        path: '/premium',
+        name: 'premium',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const PremiumUpgradeScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SharedAxisTransition(
+              animation: animation,
+              secondaryAnimation: secondaryAnimation,
+              transitionType: SharedAxisTransitionType.horizontal,
+              child: child,
+            );
+          },
+        ),
+      ),
+      GoRoute(
+        path: '/success',
+        name: 'success',
+        pageBuilder: (context, state) {
+          final extra = state.extra;
+          final result = extra is CleanupSuccessResult
+              ? extra
+              : const CleanupSuccessResult(itemsDeleted: 0, bytesFreed: 0);
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: CleanupSuccessScreen(result: result),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeThroughTransition(
+                animation: animation,
+                secondaryAnimation: secondaryAnimation,
+                child: child,
+              );
+            },
+          );
+        },
       ),
 
       // Confirm Delete - Fade through transition

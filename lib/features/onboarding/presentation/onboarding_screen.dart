@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/animated_onboarding.dart';
 import '../../../shared/services/permission_service.dart';
 import '../../../shared/services/storage_service.dart';
 
@@ -143,30 +144,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Icon
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: page.iconGradient,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(60),
-              boxShadow: [
-                BoxShadow(
-                  color: page.iconGradient[0].withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Icon(
-              page.icon,
-              size: 64,
-              color: Colors.white,
-            ),
+          // Animated Icon
+          AnimatedOnboardingIcon(
+            icon: page.icon,
+            gradientColors: page.iconGradient,
+            size: 120,
           ),
 
           const SizedBox(height: 48),

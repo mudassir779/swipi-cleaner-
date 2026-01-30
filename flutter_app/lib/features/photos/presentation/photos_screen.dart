@@ -250,7 +250,7 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
         );
       },
       loading: () => null,
-      error: (_, __) => null,
+      error: (err, st) => null,
     );
   }
 

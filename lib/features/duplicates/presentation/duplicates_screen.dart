@@ -5,10 +5,13 @@ import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../photos/domain/models/photo.dart';
+import '../../../core/utils/format_bytes.dart';
+import '../../../core/widgets/primary_gradient_button.dart';
+import '../../../core/widgets/stagger_in.dart';
 import '../../photos/domain/providers/delete_queue_provider.dart';
 import '../domain/models/duplicate_group.dart';
 import '../domain/providers/duplicates_provider.dart';
+import 'widgets/duplicate_scan_hero.dart';
 
 /// Screen for finding and managing duplicate photos
 class DuplicatesScreen extends ConsumerWidget {
@@ -38,22 +41,8 @@ class DuplicatesScreen extends ConsumerWidget {
         ),
       ),
       body: duplicatesAsync.when(
-        loading: () => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(
-                color: AppColors.primary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Scanning for duplicates...',
-                style: AppTextStyles.body.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
+        loading: () => const Center(
+          child: DuplicateScanHero(caption: 'Scanning for duplicates...'),
         ),
         error: (error, stack) => Center(
           child: Padding(
@@ -115,12 +104,176 @@ class DuplicatesScreen extends ConsumerWidget {
             );
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: groups.length,
-            itemBuilder: (context, index) {
-              return _buildDuplicateGroup(context, ref, groups[index], index);
-            },
+          final duplicatesCount =
+              groups.fold<int>(0, (sum, g) => sum + g.duplicates.length);
+          final exactDuplicatesCount = groups
+              .where((g) => g.similarityScore >= 0.99)
+              .fold<int>(0, (sum, g) => sum + g.duplicates.length);
+          final similarDuplicatesCount = (duplicatesCount - exactDuplicatesCount).clamp(0, duplicatesCount);
+
+          final wastedBytes = groups.fold<int>(
+            0,
+            (sum, g) => sum + g.duplicates.fold<int>(0, (s, p) => s + (p.fileSize ?? 0)),
+          );
+
+          return CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Summary hero
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xFFECFEFF), // cyan-50
+                              Color(0xFFF0FDFA), // teal-50
+                            ],
+                          ),
+                          border: Border.all(color: AppColors.divider),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Color(0xFF14B8A6),
+                                        Color(0xFF06B6D4),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: const Icon(
+                                    Icons.collections,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      TweenAnimationBuilder<int>(
+                                        tween: IntTween(begin: 0, end: duplicatesCount),
+                                        duration: const Duration(milliseconds: 700),
+                                        curve: Curves.easeOutCubic,
+                                        builder: (context, value, _) {
+                                          return Text(
+                                            '$value Duplicates Found',
+                                            style: const TextStyle(
+                                              fontSize: 28,
+                                              fontWeight: FontWeight.w800,
+                                              color: AppColors.textPrimary,
+                                              letterSpacing: -0.5,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${formatBytes(wastedBytes)} can be recovered',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF0F766E), // teal-700
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: StaggerIn(
+                                    delay: const Duration(milliseconds: 40),
+                                    child: _StatPill(
+                                      icon: Icons.auto_awesome,
+                                      label: 'Similar',
+                                      value: '$similarDuplicatesCount',
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: StaggerIn(
+                                    delay: const Duration(milliseconds: 90),
+                                    child: _StatPill(
+                                      icon: Icons.content_copy,
+                                      label: 'Exact',
+                                      value: '$exactDuplicatesCount',
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: StaggerIn(
+                                    delay: const Duration(milliseconds: 140),
+                                    child: _StatPill(
+                                      icon: Icons.storage_rounded,
+                                      label: 'Wasted',
+                                      value: formatBytes(wastedBytes),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            PrimaryGradientButton(
+                              colors: const [Color(0xFF111827), Color(0xFF0B1220)],
+                              onPressed: () {
+                                // Scroll naturally into the review section; keep the button for parity with prompt.
+                              },
+                              child: const Text(
+                                'Review Duplicates',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Groups',
+                        style: AppTextStyles.title.copyWith(
+                          color: AppColors.textPrimary,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                sliver: SliverList.builder(
+                  itemCount: groups.length,
+                  itemBuilder: (context, index) {
+                    return _buildDuplicateGroup(context, ref, groups[index], index);
+                  },
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -325,7 +478,7 @@ class DuplicatesScreen extends ConsumerWidget {
                         Positioned.fill(
                           child: Container(
                             decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.5),
+                              color: AppColors.error.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Center(
@@ -369,6 +522,70 @@ class DuplicatesScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _StatPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _StatPill({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.textPrimary, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                    letterSpacing: -0.2,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_manager/photo_manager.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/services/photo_service.dart';
 import '../../../photos/domain/providers/delete_queue_provider.dart';
 import '../models/home_stats.dart';
