@@ -1,44 +1,71 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-
-# dependencies
+# Miscellaneous
+*.class
+*.log
+*.lock
+*.jks
+*.key
+*.keystore
 node_modules/
 
-# Expo
-.expo/
-dist/
-web-build/
-expo-env.d.ts
+# Flutter/Dart/Pub
+.dart_tool/
+.packages
+.pub/
+.pub-cache/
+.flutter-plugins
+.flutter-plugins-dependencies
 
-# Native
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
+# Android
+android/gradlew.bat
+android/modules.xml
+android/app/libs/
+android/app/src/main/assets/
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/*.iml
 
-# Metro
-.metro-health-check*
+# iOS
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Generated.xcconfig
+ios/Flutter/app.flx
+ios/Flutter/app.zip
+ios/Flutter/flutter_assets/
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*
+ios/.generated/
 
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
+# Xcode
+ios/build/
+ios/Pods/
+ios/*.xcodeproj/project.xcworkspace
+ios/*.xcodeproj/xcuserdata
+ios/*.xcworkspace/xcuserdata
+ios/*.pbxproj
+ios/**/*.mode1v3
+ios/**/*.mode2v3
+ios/**/*.moved-aside
+ios/**/*.bbedit
+ios/**/*.perspectivev3
+ios/**/*.xcscmblueprint
 
 # macOS
-.DS_Store
-*.pem
+macos/Flutter/ephemeral/
+macos/build/
+macos/Pods/
+*.DS_Store
 
-# local env files
-.env*.local
+# Windows
+windows/flutter/ephemeral/
 
-# typescript
-*.tsbuildinfo
+# Linux
+linux/flutter/ephemeral/
 
-# generated native folders
-/ios
-/android
+# Web
+build/
+web/
 
-# Expo log
-expo.log
+# Explicitly ignore node_modules
+**/node_modules/
