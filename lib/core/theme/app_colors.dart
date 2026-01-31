@@ -25,7 +25,7 @@ class AppColors {
   static const Color warning = Color(0xFFF59E0B); // Amber
 
   // UI element colors
-  static const Color slateIcon = Color(0xFF6B7EA3); // Muted blue-gray for icons
+  static const Color slateIcon = Color(0xFF71C4D9); // Light blue/cyan for icons
   static const Color divider = Color(0xFFE5E7EB); // Light gray
   static const Color border = Color(0xFFE5E7EB);
   static const Color borderLight = Color(0xFFF3F4F6);

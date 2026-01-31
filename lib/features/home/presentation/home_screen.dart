@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:photo_manager/photo_manager.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/skeleton_loading.dart';
+import '../../../core/widgets/animations.dart';
 import '../../photos/domain/providers/photo_provider.dart';
 import '../../photos/domain/providers/delete_queue_provider.dart';
 import '../../photos/domain/providers/month_photos_provider.dart';
@@ -16,7 +16,8 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final photosAsync = ref.watch(allPhotosProvider);
+    // Use fast stats provider for instant photo/video counts
+    final statsAsync = ref.watch(photoVideoStatsProvider);
     final deleteQueue = ref.watch(deleteQueueProvider);
     final todayPhotosAsync = ref.watch(todayPhotosProvider);
 
@@ -28,61 +29,65 @@ class HomeScreen extends ConsumerWidget {
           // backgroundColor: removed to use theme default
           elevation: 0,
           toolbarHeight: 70,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+          title: Builder(
+            builder: (context) {
+              final theme = Theme.of(context);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      image: const DecorationImage(
-                        image: AssetImage('assets/images/logo.png'),
-                        fit: BoxFit.cover,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          image: const DecorationImage(
+                            image: AssetImage('assets/images/logo.png'),
+                            fit: BoxFit.cover,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Swipe to Clean',
+                        style: TextStyle(
+                          color: theme.textTheme.titleLarge?.color,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Swipe to Clean',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 24, // Slightly smaller to fit better
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -0.5,
+                  const SizedBox(height: 2),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 52),
+                    child: Text(
+                      'Free up space with a swipe',
+                      style: TextStyle(
+                        color: theme.textTheme.bodySmall?.color,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 2),
-              const Padding(
-                padding: EdgeInsets.only(left: 52), // Align with text start
-                child: Text(
-                  'Free up space with a swipe',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ),
-            ],
+              );
+            },
           ),
-
         ),
         body: RefreshIndicator(
           color: AppColors.primary,
           onRefresh: () async {
-            ref.invalidate(allPhotosProvider);
+            ref.invalidate(photoVideoStatsProvider);
             ref.invalidate(todayPhotosProvider);
           },
           child: SingleChildScrollView(
@@ -91,89 +96,104 @@ class HomeScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Statistics Cards
-                photosAsync.when(
-                  loading: () => const _StatsGridSkeleton(),
-                  error: (e, _) => _buildStatsGrid(0, 0, 0, deleteQueue.length),
-                  data: (photos) {
-                    final photoCount = photos.where((p) => p.asset.type == AssetType.image).length;
-                    final videoCount = photos.where((p) => p.asset.type == AssetType.video).length;
-                    final todayCount = todayPhotosAsync.maybeWhen(
-                      data: (t) => t.length,
-                      orElse: () => 0,
-                    );
-                    return _buildStatsGrid(
-                      photoCount, 
-                      videoCount, 
-                      todayCount, 
-                      deleteQueue.length,
-                    );
-                  },
+                // Statistics Cards - now using fast stats provider with animation
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 0),
+                  child: statsAsync.when(
+                    loading: () => const _StatsGridSkeleton(),
+                    error: (e, _) => _buildStatsGrid(0, 0, 0, deleteQueue.length),
+                    data: (stats) {
+                      final photoCount = stats['photos'] ?? 0;
+                      final videoCount = stats['videos'] ?? 0;
+                      final todayCount = todayPhotosAsync.maybeWhen(
+                        data: (t) => t.length,
+                        orElse: () => 0,
+                      );
+                      return _buildStatsGrid(
+                        photoCount, 
+                        videoCount, 
+                        todayCount, 
+                        deleteQueue.length,
+                      );
+                    },
+                  ),
                 ),
 
                 const SizedBox(height: 24),
 
-                // Quick Actions Section
-                Text(
-                  'QUICK ACTIONS',
-                  style: AppTextStyles.sectionHeader,
+                // Quick Actions Section with animation
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 100),
+                  child: Text(
+                    'QUICK ACTIONS',
+                    style: AppTextStyles.sectionHeader,
+                  ),
                 ),
                 const SizedBox(height: 12),
 
-                // Quick Action Cards Grid
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 1.4,
-                  children: [
-                    _QuickActionCard(
-                      icon: Icons.swipe,
-                      title: 'Swipe Review',
-                      subtitle: 'Clean photos fast',
-                      gradientColors: const [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
-                      onTap: () => context.push('/swipe-review'),
-                    ),
-                    _QuickActionCard(
-                      icon: Icons.content_copy,
-                      title: 'Find Duplicates',
-                      subtitle: 'Remove copies',
-                      gradientColors: const [Color(0xFF667EEA), Color(0xFF764BA2)],
-                      onTap: () => context.push('/duplicates'),
-                    ),
-                    _QuickActionCard(
-                      icon: Icons.auto_awesome,
-                      title: 'Smart Collections',
-                      subtitle: 'Auto-organized',
-                      gradientColors: const [Color(0xFF11998E), Color(0xFF38EF7D)],
-                      onTap: () => context.push('/smart-collections'),
-                    ),
-                    _QuickActionCard(
-                      icon: Icons.compress,
-                      title: 'Compress Photos',
-                      subtitle: 'Save space',
-                      gradientColors: const [Color(0xFFF093FB), Color(0xFFF5576C)],
-                      onTap: () => context.push('/compress-photos'),
-                    ),
-                  ],
+                // Quick Action Cards Grid with animation
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 150),
+                  child: GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 1.4,
+                    children: [
+                      _QuickActionCard(
+                        icon: Icons.swipe,
+                        title: 'Swipe Review',
+                        subtitle: 'Clean photos fast',
+                        gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
+                        onTap: () => context.push('/swipe-review'),
+                      ),
+                      _QuickActionCard(
+                        icon: Icons.content_copy,
+                        title: 'Find Duplicates',
+                        subtitle: 'Remove copies',
+                        gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
+                        onTap: () => context.push('/duplicates'),
+                      ),
+                      _QuickActionCard(
+                        icon: Icons.auto_awesome,
+                        title: 'Smart Collections',
+                        subtitle: 'Auto-organized',
+                        gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
+                        onTap: () => context.push('/smart-collections'),
+                      ),
+                      _QuickActionCard(
+                        icon: Icons.compress,
+                        title: 'Compress Photos',
+                        subtitle: 'Save space',
+                        gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
+                        onTap: () => context.push('/compress-photos'),
+                      ),
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: 24),
 
-                // Storage Overview Card
-                _StorageOverviewCard(
-                  onTap: () => context.push('/storage-stats'),
+                // Storage Overview Card with animation
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 250),
+                  child: _StorageOverviewCard(
+                    onTap: () => context.push('/storage-stats'),
+                  ),
                 ),
 
                 const SizedBox(height: 24),
 
-                // Delete Queue Banner (if items present)
+                // Delete Queue Banner (if items present) with animation
                 if (deleteQueue.isNotEmpty)
-                  _DeleteQueueBanner(
-                    count: deleteQueue.length,
-                    onTap: () => context.push('/confirm-delete'),
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 300),
+                    child: _DeleteQueueBanner(
+                      count: deleteQueue.length,
+                      onTap: () => context.push('/confirm-delete'),
+                    ),
                   ),
 
                 const SizedBox(height: 80),
@@ -192,31 +212,35 @@ class HomeScreen extends ConsumerWidget {
       crossAxisCount: 2,
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
-      childAspectRatio: 1.75,
+      childAspectRatio: 1.5,
       children: [
         _StatCard(
-          icon: Icons.photo_library,
+          icon: Icons.photo_library_rounded,
           value: '$photos',
           label: 'Photos',
-          color: const Color(0xFF3B82F6),
+          color: const Color(0xFF71C4D9),
+          gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
         ),
         _StatCard(
-          icon: Icons.videocam,
+          icon: Icons.videocam_rounded,
           value: '$videos',
           label: 'Videos',
-          color: const Color(0xFF3B82F6),
+          color: const Color(0xFF71C4D9),
+          gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
         ),
         _StatCard(
-          icon: Icons.today,
+          icon: Icons.today_rounded,
           value: '$today',
           label: 'Today',
-          color: const Color(0xFFF97316),
+          color: const Color(0xFF71C4D9),
+          gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
         ),
         _StatCard(
-          icon: Icons.delete_outline,
+          icon: Icons.delete_sweep_rounded,
           value: '$deleteQueue',
           label: 'To Delete',
-          color: AppColors.red,
+          color: const Color(0xFF71C4D9),
+          gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
         ),
       ],
     );
@@ -243,80 +267,114 @@ class _StatsGridSkeleton extends StatelessWidget {
   }
 }
 
-class _StatCard extends StatelessWidget {
+class _StatCard extends StatefulWidget {
   final IconData icon;
   final String value;
   final String label;
   final Color color;
+  final List<Color>? gradientColors;
 
   const _StatCard({
     required this.icon,
     required this.value,
     required this.label,
     required this.color,
+    this.gradientColors,
   });
 
   @override
+  State<_StatCard> createState() => _StatCardState();
+}
+
+class _StatCardState extends State<_StatCard> with SingleTickerProviderStateMixin {
+  bool _isPressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.slateIcon,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: Colors.white, size: 20),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).textTheme.titleLarge?.color,
-                  ),
-                ),
-              ),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+    final gradient = widget.gradientColors ?? [widget.color, widget.color.withValues(alpha: 0.7)];
+    
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedScale(
+        scale: _isPressed ? 0.95 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
+            boxShadow: [
+              BoxShadow(
+                color: gradient.first.withValues(alpha: 0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
-        ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Gradient icon container
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: gradient,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: gradient.first.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Icon(widget.icon, color: Colors.white, size: 20),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      widget.value,
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: Theme.of(context).textTheme.titleLarge?.color,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    widget.label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-class _QuickActionCard extends StatelessWidget {
+class _QuickActionCard extends StatefulWidget {
   final IconData icon;
   final String title;
   final String subtitle;
@@ -332,56 +390,86 @@ class _QuickActionCard extends StatelessWidget {
   });
 
   @override
+  State<_QuickActionCard> createState() => _QuickActionCardState();
+}
+
+class _QuickActionCardState extends State<_QuickActionCard> {
+  bool _isPressed = false;
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.divider),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.slateIcon,
-                borderRadius: BorderRadius.circular(10),
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedScale(
+        scale: _isPressed ? 0.95 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
+            boxShadow: [
+              BoxShadow(
+                color: widget.gradientColors.first.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
-              child: Icon(icon, color: Colors.white, size: 20),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).textTheme.titleMedium?.color,
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: widget.gradientColors,
                   ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: widget.gradientColors.first.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
+                child: Icon(widget.icon, color: Colors.white, size: 20),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).textTheme.titleMedium?.color,
+                      letterSpacing: -0.3,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -24,6 +24,7 @@ class ChevronListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       leading: leadingIcon == null
@@ -43,26 +44,26 @@ class ChevronListTile extends StatelessWidget {
             ),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: AppColors.textPrimary,
+          color: theme.textTheme.titleMedium?.color,
         ),
       ),
       subtitle: subtitle == null
           ? null
           : Text(
               subtitle!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: AppColors.textSecondary,
+                color: theme.textTheme.bodySmall?.color,
               ),
             ),
       trailing: trailing ??
           (showChevron
-              ? const Icon(
+              ? Icon(
                   Icons.chevron_right,
-                  color: AppColors.textSecondary,
+                  color: theme.textTheme.bodySmall?.color,
                 )
               : null),
       onTap: onTap,

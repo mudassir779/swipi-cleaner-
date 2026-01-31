@@ -474,7 +474,7 @@ class _AnimatedMenuButtonState extends State<_AnimatedMenuButton>
       width: width,
       height: 2.5,
       decoration: BoxDecoration(
-        color: AppColors.textPrimary,
+        color: Theme.of(context).textTheme.bodyLarge?.color,
         borderRadius: BorderRadius.circular(2),
       ),
     );

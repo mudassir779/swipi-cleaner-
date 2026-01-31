@@ -20,7 +20,20 @@ class Photo {
     required this.asset,
   });
 
-  /// Create Photo from AssetEntity
+  /// Fast creation without file size (for lists - much faster)
+  static Photo fromAssetSync(AssetEntity asset) {
+    return Photo(
+      id: asset.id,
+      title: asset.title,
+      creationDate: asset.createDateTime,
+      width: asset.width,
+      height: asset.height,
+      fileSize: null,
+      asset: asset,
+    );
+  }
+
+  /// Full creation with file size (for details screen only)
   static Future<Photo> fromAsset(AssetEntity asset) async {
     final file = await asset.file;
     final fileSize = file != null ? await file.length() : null;

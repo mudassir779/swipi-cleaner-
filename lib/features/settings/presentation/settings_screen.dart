@@ -39,7 +39,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -85,27 +84,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   slivers: [
                     const SliverToBoxAdapter(child: SizedBox(height: 8)),
 
-                    // APPEARANCE
-                    _buildAnimatedHeader(0, 'Appearance'),
+                    // STORAGE
+                    _buildAnimatedHeader(0, 'Storage'),
                     _buildAnimatedSection(
                       1,
-                      Column(
-                        children: [
-                          SwitchListTileRow(
-                            leadingIcon: Icons.dark_mode_rounded,
-                            title: 'Dark Mode',
-                            subtitle: 'Easier on the eyes',
-                            value: s.isDarkMode,
-                            onChanged: (v) => ref.read(settingsProvider.notifier).setDarkMode(v),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // STORAGE
-                    _buildAnimatedHeader(2, 'Storage'),
-                    _buildAnimatedSection(
-                      3,
                       Column(
                         children: [
                           _SwitchChevronRow(
@@ -136,9 +118,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     ),
 
                     // PRIVACY & SECURITY
-                    _buildAnimatedHeader(4, 'Privacy & Security'),
+                    _buildAnimatedHeader(2, 'Privacy & Security'),
                     _buildAnimatedSection(
-                      5,
+                      3,
                       Column(
                         children: [
                           SwitchListTileRow(
@@ -172,9 +154,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     ),
 
                     // BACKUP & SYNC
-                    _buildAnimatedHeader(6, 'Backup & Sync'),
+                    _buildAnimatedHeader(4, 'Backup & Sync'),
                     _buildAnimatedSection(
-                      7,
+                      5,
                       Column(
                         children: [
                           SwitchListTileRow(
@@ -218,9 +200,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     ),
 
                     // NOTIFICATIONS
-                    _buildAnimatedHeader(8, 'Notifications'),
+                    _buildAnimatedHeader(6, 'Notifications'),
                     _buildAnimatedSection(
-                      9,
+                      7,
                       Column(
                         children: [
                           SwitchListTileRow(
@@ -243,9 +225,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     ),
 
                     // ADVANCED
-                    _buildAnimatedHeader(10, 'Advanced'),
+                    _buildAnimatedHeader(8, 'Advanced'),
                     _buildAnimatedSection(
-                      11,
+                      9,
                       Column(
                         children: [
                           ChevronListTile(
@@ -445,19 +427,20 @@ class _SwitchChevronRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: AppColors.textPrimary,
+          color: theme.textTheme.titleMedium?.color,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+        style: TextStyle(fontSize: 13, color: theme.textTheme.bodySmall?.color),
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -469,7 +452,7 @@ class _SwitchChevronRow extends StatelessWidget {
             activeTrackColor: AppColors.green.withValues(alpha: 0.35),
           ),
           const SizedBox(width: 6),
-          const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          Icon(Icons.chevron_right, color: theme.textTheme.bodySmall?.color),
         ],
       ),
       onTap: () => onChanged(!value),

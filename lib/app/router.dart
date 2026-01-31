@@ -24,75 +24,152 @@ import '../features/success/domain/models/cleanup_success_result.dart';
 import '../features/success/presentation/cleanup_success_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 
-/// App routing configuration using GoRouter
+/// Custom page transitions for smooth navigation
+class _FadeTransitionPage extends CustomTransitionPage<void> {
+  _FadeTransitionPage({required Widget child})
+      : super(
+          child: child,
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: CurveTween(curve: Curves.easeInOut).animate(animation),
+              child: child,
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 250),
+        );
+}
+
+class _SlideUpTransitionPage extends CustomTransitionPage<void> {
+  _SlideUpTransitionPage({required Widget child})
+      : super(
+          child: child,
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(0.0, 1.0);
+            const end = Offset.zero;
+            const curve = Curves.easeOutCubic;
+            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            var offsetAnimation = animation.drive(tween);
+            
+            return SlideTransition(
+              position: offsetAnimation,
+              child: child,
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 350),
+        );
+}
+
+class _SlideRightTransitionPage extends CustomTransitionPage<void> {
+  _SlideRightTransitionPage({required Widget child})
+      : super(
+          child: child,
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(1.0, 0.0);
+            const end = Offset.zero;
+            const curve = Curves.easeOutCubic;
+            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            var offsetAnimation = animation.drive(tween);
+            
+            return SlideTransition(
+              position: offsetAnimation,
+              child: child,
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 300),
+        );
+}
+
+/// App routing configuration using GoRouter with smooth animations
 class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: '/home',
     routes: [
-      // Onboarding
+      // Onboarding - Fade transition
       GoRoute(
         path: '/onboarding',
         name: 'onboarding',
-        builder: (context, state) => const OnboardingScreen(),
+        pageBuilder: (context, state) => _FadeTransitionPage(
+          child: const OnboardingScreen(),
+        ),
       ),
 
-      // Main tab screens
+      // Main tab screens - Fade transition for smooth tab switching
       GoRoute(
         path: '/home',
         name: 'home',
-        builder: (context, state) => const HomeScreen(),
+        pageBuilder: (context, state) => _FadeTransitionPage(
+          child: const HomeScreen(),
+        ),
       ),
       GoRoute(
         path: '/photos',
         name: 'photos',
-        builder: (context, state) => const PhotosScreen(),
+        pageBuilder: (context, state) => _FadeTransitionPage(
+          child: const PhotosScreen(),
+        ),
       ),
       GoRoute(
         path: '/tools',
         name: 'tools',
-        builder: (context, state) => const ToolsScreen(),
+        pageBuilder: (context, state) => _FadeTransitionPage(
+          child: const ToolsScreen(),
+        ),
       ),
 
-      // Full-screen modal routes
+      // Full-screen modal routes - Slide up animation
       GoRoute(
         path: '/swipe-review',
         name: 'swipe-review',
-        builder: (context, state) => const SwipeReviewScreen(),
+        pageBuilder: (context, state) => _SlideUpTransitionPage(
+          child: const SwipeReviewScreen(),
+        ),
       ),
       GoRoute(
         path: '/duplicates',
         name: 'duplicates',
-        builder: (context, state) => const DuplicatesScreen(),
+        pageBuilder: (context, state) => _SlideUpTransitionPage(
+          child: const DuplicatesScreen(),
+        ),
       ),
       GoRoute(
         path: '/smart-collections',
         name: 'smart-collections',
-        builder: (context, state) => const SmartCollectionsScreen(),
+        pageBuilder: (context, state) => _SlideUpTransitionPage(
+          child: const SmartCollectionsScreen(),
+        ),
       ),
       GoRoute(
         path: '/compress-photos',
         name: 'compress-photos',
-        builder: (context, state) => const CompressPhotosScreen(),
+        pageBuilder: (context, state) => _SlideUpTransitionPage(
+          child: const CompressPhotosScreen(),
+        ),
       ),
       GoRoute(
         path: '/create-pdf',
         name: 'create-pdf',
-        builder: (context, state) => const CreatePdfScreen(),
+        pageBuilder: (context, state) => _SlideUpTransitionPage(
+          child: const CreatePdfScreen(),
+        ),
       ),
       GoRoute(
         path: '/video-frames',
         name: 'video-frames',
-        builder: (context, state) => const VideoFramesScreen(),
+        pageBuilder: (context, state) => _SlideUpTransitionPage(
+          child: const VideoFramesScreen(),
+        ),
       ),
       GoRoute(
         path: '/compress-videos',
         name: 'compress-videos',
-        builder: (context, state) => const VideoCompressionScreen(),
+        pageBuilder: (context, state) => _SlideUpTransitionPage(
+          child: const VideoCompressionScreen(),
+        ),
       ),
       GoRoute(
         path: '/collection-photos/:type',
         name: 'collection-photos',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final typeStr = state.pathParameters['type'] ?? 'large';
           CollectionType type;
           switch (typeStr) {
@@ -105,56 +182,74 @@ class AppRouter {
             default:
               type = CollectionType.large;
           }
-          return CollectionPhotosScreen(collectionType: type);
+          return _SlideRightTransitionPage(
+            child: CollectionPhotosScreen(collectionType: type),
+          );
         },
       ),
       GoRoute(
         path: '/social-media-cleaner',
         name: 'social-media-cleaner',
-        builder: (context, state) => const SocialMediaCleanerScreen(),
+        pageBuilder: (context, state) => _SlideUpTransitionPage(
+          child: const SocialMediaCleanerScreen(),
+        ),
       ),
       GoRoute(
         path: '/storage-stats',
         name: 'storage-stats',
-        builder: (context, state) => const StorageOverviewScreen(),
+        pageBuilder: (context, state) => _SlideRightTransitionPage(
+          child: const StorageOverviewScreen(),
+        ),
       ),
       GoRoute(
         path: '/categories',
         name: 'categories',
-        builder: (context, state) => const CategoriesScreen(),
+        pageBuilder: (context, state) => _SlideRightTransitionPage(
+          child: const CategoriesScreen(),
+        ),
       ),
       GoRoute(
         path: '/settings',
         name: 'settings',
-        builder: (context, state) => const SettingsScreen(),
+        pageBuilder: (context, state) => _SlideRightTransitionPage(
+          child: const SettingsScreen(),
+        ),
       ),
       GoRoute(
         path: '/premium',
         name: 'premium',
-        builder: (context, state) => const PremiumUpgradeScreen(),
+        pageBuilder: (context, state) => _SlideUpTransitionPage(
+          child: const PremiumUpgradeScreen(),
+        ),
       ),
       GoRoute(
         path: '/recently-deleted',
         name: 'recently-deleted',
-        builder: (context, state) => const RecentlyDeletedScreen(),
+        pageBuilder: (context, state) => _SlideRightTransitionPage(
+          child: const RecentlyDeletedScreen(),
+        ),
       ),
       GoRoute(
         path: '/confirm-delete',
         name: 'confirm-delete',
-        builder: (context, state) => const ConfirmDeleteScreen(),
+        pageBuilder: (context, state) => _SlideUpTransitionPage(
+          child: const ConfirmDeleteScreen(),
+        ),
       ),
       GoRoute(
         path: '/success',
         name: 'success',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final extra = state.extra;
+          Widget child;
           if (extra is CleanupSuccessResult) {
-            return CleanupSuccessScreen(result: extra);
+            child = CleanupSuccessScreen(result: extra);
+          } else {
+            child = const CleanupSuccessScreen(
+              result: CleanupSuccessResult(itemsDeleted: 0, bytesFreed: 0),
+            );
           }
-          // Fall back to a safe default if navigation data is missing.
-          return const CleanupSuccessScreen(
-            result: CleanupSuccessResult(itemsDeleted: 0, bytesFreed: 0),
-          );
+          return _FadeTransitionPage(child: child);
         },
       ),
       GoRoute(
@@ -163,7 +258,6 @@ class AppRouter {
         pageBuilder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           if (extra == null || !extra.containsKey('asset') || !extra.containsKey('photoId')) {
-            // Return error page if navigation data is missing
             return MaterialPage(
               child: Scaffold(
                 appBar: AppBar(title: const Text('Error')),
@@ -173,8 +267,7 @@ class AppRouter {
               ),
             );
           }
-          return MaterialPage(
-            fullscreenDialog: true,
+          return _SlideUpTransitionPage(
             child: PhotoDetailsScreen(
               asset: extra['asset'] as AssetEntity,
               photoId: extra['photoId'] as String,

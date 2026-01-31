@@ -32,12 +32,8 @@ final photosProvider =
 
   final assets = await service.getAllPhotos(page: page, size: 100);
 
-  // Convert AssetEntity to Photo model
-  final photos = await Future.wait(
-    assets.map((asset) => Photo.fromAsset(asset)),
-  );
-
-  return photos;
+  // Fast conversion without file size loading for better performance
+  return assets.map((asset) => Photo.fromAssetSync(asset)).toList();
 });
 
 /// Filtered photos provider
@@ -114,6 +110,20 @@ final filteredPhotosProvider = FutureProvider<List<Photo>>((ref) async {
   return filtered;
 });
 
+/// Fast photo/video stats provider - uses native API counts, instant!
+/// Use this for Home screen stats instead of loading all photos
+final photoVideoStatsProvider = FutureProvider<Map<String, int>>((ref) async {
+  final service = ref.read(photoServiceProvider);
+  final hasPermission = await service.hasPermission();
+  if (!hasPermission) return {'photos': 0, 'videos': 0};
+  
+  // These are native API calls - very fast!
+  final photoCount = await service.getPhotoCount(type: RequestType.image);
+  final videoCount = await service.getPhotoCount(type: RequestType.video);
+  
+  return {'photos': photoCount, 'videos': videoCount};
+});
+
 /// All photos provider - loads ALL photos in batches for accurate stats
 /// WARNING: This can be slow for large libraries, use sparingly
 final allPhotosProvider = FutureProvider<List<Photo>>((ref) async {
@@ -135,10 +145,8 @@ final allPhotosProvider = FutureProvider<List<Photo>>((ref) async {
 
     if (assets.isEmpty) break; // No more photos
 
-    // Convert AssetEntity to Photo model
-    final photos = await Future.wait(
-      assets.map((asset) => Photo.fromAsset(asset)),
-    );
+    // Fast conversion without file size loading
+    final photos = assets.map((asset) => Photo.fromAssetSync(asset)).toList();
 
     allPhotos.addAll(photos);
     page++;

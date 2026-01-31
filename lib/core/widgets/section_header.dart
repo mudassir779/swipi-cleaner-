@@ -12,17 +12,18 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-      color: AppColors.background,
+      color: theme.scaffoldBackgroundColor,
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
           letterSpacing: 1.2,
           fontWeight: FontWeight.w600,
-          color: AppColors.textSecondary,
+          color: theme.textTheme.bodySmall?.color,
         ),
       ),
     );

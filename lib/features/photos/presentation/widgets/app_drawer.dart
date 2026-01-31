@@ -76,17 +76,24 @@ class _AppDrawerState extends ConsumerState<AppDrawer>
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.95),
-                    Colors.white.withValues(alpha: 0.85),
-                  ],
+                  colors: Theme.of(context).brightness == Brightness.dark
+                      ? [
+                          const Color(0xFF1A1A25).withValues(alpha: 0.95),
+                          const Color(0xFF0F0F17).withValues(alpha: 0.95),
+                        ]
+                      : [
+                          Colors.white.withValues(alpha: 0.95),
+                          Colors.white.withValues(alpha: 0.85),
+                        ],
                 ),
                 borderRadius: const BorderRadius.only(
                   topRight: Radius.circular(24),
                   bottomRight: Radius.circular(24),
                 ),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.white.withValues(alpha: 0.3),
                   width: 1.5,
                 ),
                 boxShadow: [
@@ -135,12 +142,12 @@ class _AppDrawerState extends ConsumerState<AppDrawer>
                                       ),
                                     ),
                                   ),
-                                  const Text(
+                                  Text(
                                     'Storage',
                                     style: TextStyle(
                                       fontSize: 26,
                                       fontWeight: FontWeight.bold,
-                                      color: AppColors.textPrimary,
+                                      color: Theme.of(context).textTheme.titleLarge?.color,
                                       height: 1.2,
                                     ),
                                   ),
@@ -156,7 +163,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer>
                       ),
                     ),
 
-                    const Divider(height: 1, thickness: 1, color: dividerColor),
+                    Divider(height: 1, thickness: 1, color: Theme.of(context).dividerColor),
 
                     // Animated Menu Items
                     Expanded(
@@ -281,7 +288,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer>
         ),
       );
       if (i < items.length - 1) {
-        widgets.add(const Divider(height: 1, indent: 24, endIndent: 24, color: Color(0xFFF0F0F0)));
+        widgets.add(Divider(height: 1, indent: 24, endIndent: 24, color: Theme.of(context).dividerColor));
       }
     }
 
@@ -295,7 +302,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer>
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: Colors.grey.shade500,
+            color: Theme.of(context).textTheme.bodySmall?.color,
             letterSpacing: 1.2,
           ),
         ),
@@ -335,7 +342,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer>
         },
       ),
     );
-    widgets.add(const Divider(height: 1, indent: 24, endIndent: 24, color: Color(0xFFF0F0F0)));
+    widgets.add(Divider(height: 1, indent: 24, endIndent: 24, color: Theme.of(context).dividerColor));
     widgets.add(
       _MenuItemWidget(
         icon: Icons.info_outline_rounded,
@@ -468,6 +475,7 @@ class _AnimatedCloseButtonState extends State<_AnimatedCloseButton> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AnimatedBuilder(
       animation: widget.animation,
       builder: (context, child) {
@@ -489,8 +497,8 @@ class _AnimatedCloseButtonState extends State<_AnimatedCloseButton> {
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: _isPressed 
-                ? Colors.grey.shade200 
-                : Colors.grey.shade100,
+                ? (isDark ? Colors.white.withValues(alpha: 0.15) : Colors.grey.shade200)
+                : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade100),
             borderRadius: BorderRadius.circular(12),
             boxShadow: _isPressed
                 ? []
@@ -502,9 +510,9 @@ class _AnimatedCloseButtonState extends State<_AnimatedCloseButton> {
                     ),
                   ],
           ),
-          child: const Icon(
+          child: Icon(
             Icons.close,
-            color: AppColors.textPrimary,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
             size: 20,
           ),
         ),
@@ -537,6 +545,7 @@ class _MenuItemWidgetState extends State<_MenuItemWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) => setState(() => _isPressed = false),
@@ -548,7 +557,7 @@ class _MenuItemWidgetState extends State<_MenuItemWidget> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
           color: _isPressed 
-              ? Colors.grey.shade100 
+              ? (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade100)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
@@ -591,10 +600,10 @@ class _MenuItemWidgetState extends State<_MenuItemWidget> {
                       Expanded(
                         child: Text(
                           widget.label,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                             letterSpacing: -0.3,
                           ),
                           overflow: TextOverflow.ellipsis,
