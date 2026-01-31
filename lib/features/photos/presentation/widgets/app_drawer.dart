@@ -214,52 +214,41 @@ class _AppDrawerState extends ConsumerState<AppDrawer>
 
   List<Widget> _buildMenuItems(BuildContext context, Color dividerColor) {
     final items = <_MenuItemData>[
-      _MenuItemData(
-        icon: Icons.content_copy_outlined,
-        label: 'Find Duplicates',
-        gradientColors: const [Color(0xFF667EEA), Color(0xFF764BA2)],
-        route: '/duplicates',
-      ),
-      _MenuItemData(
-        icon: Icons.photo_size_select_large_rounded,
-        label: 'Compress Photos',
-        gradientColors: const [Color(0xFFF093FB), Color(0xFFF5576C)],
-        route: '/compress-photos',
-      ),
+
       _MenuItemData(
         icon: Icons.video_settings_rounded,
         label: 'Compress Videos',
-        gradientColors: const [Color(0xFFFA709A), Color(0xFFFEE140)],
+        gradientColors: const [Color(0xFF718096), Color(0xFFA0AEC0)],
         route: '/compress-videos',
       ),
       _MenuItemData(
         icon: Icons.picture_as_pdf_rounded,
         label: 'Create PDF',
-        gradientColors: const [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
+        gradientColors: const [Color(0xFF718096), Color(0xFFA0AEC0)],
         route: '/create-pdf',
       ),
       _MenuItemData(
         icon: Icons.burst_mode_rounded,
         label: 'Video Frames',
-        gradientColors: const [Color(0xFF4FACFE), Color(0xFF00F2FE)],
+        gradientColors: const [Color(0xFF718096), Color(0xFFA0AEC0)],
         route: '/video-frames',
       ),
       _MenuItemData(
         icon: Icons.grid_view_rounded,
         label: 'Categories',
-        gradientColors: const [Color(0xFF11998E), Color(0xFF38EF7D)],
+        gradientColors: const [Color(0xFF718096), Color(0xFFA0AEC0)],
         route: '/categories',
       ),
       _MenuItemData(
         icon: Icons.bar_chart_rounded,
         label: 'Storage Stats',
-        gradientColors: const [Color(0xFF7C3AED), Color(0xFF5B21B6)],
+        gradientColors: const [Color(0xFF718096), Color(0xFFA0AEC0)],
         route: '/storage-stats',
       ),
       _MenuItemData(
         icon: Icons.workspace_premium_outlined,
         label: 'Upgrade to Premium',
-        gradientColors: const [Color(0xFFFFD700), Color(0xFFFFA500)],
+        gradientColors: const [Color(0xFF718096), Color(0xFFA0AEC0)],
         route: '/premium',
         isPremium: true,
       ),

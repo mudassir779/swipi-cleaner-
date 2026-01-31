@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_manager/photo_manager.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'photo_provider.dart';
 
 /// Model for a recently deleted item
 class RecentlyDeletedItem {
@@ -28,138 +28,86 @@ class RecentlyDeletedItem {
 /// Provider for recently deleted items
 final recentlyDeletedProvider =
     StateNotifierProvider<RecentlyDeletedNotifier, AsyncValue<List<RecentlyDeletedItem>>>((ref) {
-  return RecentlyDeletedNotifier();
+  return RecentlyDeletedNotifier(ref);
 });
 
 class RecentlyDeletedNotifier extends StateNotifier<AsyncValue<List<RecentlyDeletedItem>>> {
-  static const String _storageKey = 'recently_deleted_items';
+  final Ref ref;
   
-  RecentlyDeletedNotifier() : super(const AsyncValue.loading()) {
+  RecentlyDeletedNotifier(this.ref) : super(const AsyncValue.loading()) {
     _loadItems();
   }
 
-  /// Load items from storage
+  /// Load items from system album
   Future<void> _loadItems() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final itemsJson = prefs.getStringList(_storageKey) ?? [];
+      state = const AsyncValue.loading();
+      final service = ref.read(photoServiceProvider);
       
-      final List<RecentlyDeletedItem> items = [];
+      // Get items from Recently Deleted album
+      final assets = await service.getRecentlyDeletedPhotos();
       
-      for (final json in itemsJson) {
-        final parts = json.split('|');
-        if (parts.length == 2) {
-          final photoId = parts[0];
-          final deletedAt = DateTime.tryParse(parts[1]);
-          
-          if (deletedAt != null) {
-            // Try to get the asset
-            AssetEntity? asset;
-            try {
-              asset = await AssetEntity.fromId(photoId);
-            } catch (_) {
-              // Asset may no longer exist
-            }
-            
-            final item = RecentlyDeletedItem(
-              photoId: photoId,
-              deletedAt: deletedAt,
-              asset: asset,
-            );
-            
-            // Only add if not expired
-            if (!item.isExpired) {
-              items.add(item);
-            }
-          }
-        }
-      }
+      // Convert to RecentlyDeletedItem
+      final items = assets.map((asset) {
+        // We don't have exact deletion time from API, so we use modification date
+        final date = asset.modifiedDateTime;
+        
+        return RecentlyDeletedItem(
+          photoId: asset.id,
+          deletedAt: date, // Using modification date as proxy for deletion time
+          asset: asset,
+        );
+      }).toList();
       
-      // Clean up expired items
-      await _saveItems(items);
       state = AsyncValue.data(items);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
   }
 
-  /// Save items to storage
-  Future<void> _saveItems(List<RecentlyDeletedItem> items) async {
-    final prefs = await SharedPreferences.getInstance();
-    final itemsJson = items
-        .where((item) => !item.isExpired)
-        .map((item) => '${item.photoId}|${item.deletedAt.toIso8601String()}')
-        .toList();
-    await prefs.setStringList(_storageKey, itemsJson);
-  }
-
-  /// Add item to recently deleted
+  /// Add item (Stub - system handles this)
   Future<void> addItem(String photoId) async {
-    final currentItems = state.value ?? [];
-    
-    // Check if already exists
-    if (currentItems.any((item) => item.photoId == photoId)) return;
-    
-    AssetEntity? asset;
-    try {
-      asset = await AssetEntity.fromId(photoId);
-    } catch (_) {}
-    
-    final newItem = RecentlyDeletedItem(
-      photoId: photoId,
-      deletedAt: DateTime.now(),
-      asset: asset,
-    );
-    
-    final updatedItems = [...currentItems, newItem];
-    await _saveItems(updatedItems);
-    state = AsyncValue.data(updatedItems);
+    await refresh();
   }
 
-  /// Restore an item (remove from recently deleted)
+  /// Restore item (Not supported programmatically on all OS, just refresh)
   Future<void> restore(String photoId) async {
-    final currentItems = state.value ?? [];
-    final updatedItems = currentItems.where((item) => item.photoId != photoId).toList();
-    await _saveItems(updatedItems);
-    state = AsyncValue.data(updatedItems);
+    // Note: iOS doesn't allow restoring via API easily without user prompt
+    // For now we just refresh the list
+    await refresh();
   }
 
   /// Permanently delete an item
   Future<void> deletePermanently(String photoId) async {
     try {
-      // Actually delete from gallery
-      final asset = await AssetEntity.fromId(photoId);
-      if (asset != null) {
-        await PhotoManager.editor.deleteWithIds([photoId]);
-      }
+      // This might prompt the user or fail if not allowed on Recently Deleted
+
+      // PhotoManager deleteWithIds on items already in trash might delete permanently or fail
+      // usage: PhotoManager.editor.deleteWithIds([photoId]);
+      await PhotoManager.editor.deleteWithIds([photoId]);
     } catch (_) {
-      // May already be deleted
+      // Ignore errors
     }
     
-    // Remove from our list
-    await restore(photoId);
+    // Refresh to update list
+    await refresh();
   }
 
   /// Clear all items
   Future<void> clearAll() async {
     final currentItems = state.value ?? [];
+    try {
+       final ids = currentItems.map((i) => i.photoId).toList();
+       if (ids.isNotEmpty) {
+         await PhotoManager.editor.deleteWithIds(ids);
+       }
+    } catch (_) {}
     
-    // Delete all from gallery
-    for (final item in currentItems) {
-      try {
-        await PhotoManager.editor.deleteWithIds([item.photoId]);
-      } catch (_) {}
-    }
-    
-    // Clear storage
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_storageKey);
-    state = const AsyncValue.data([]);
+    await refresh();
   }
 
   /// Refresh items
   Future<void> refresh() async {
-    state = const AsyncValue.loading();
     await _loadItems();
   }
 }

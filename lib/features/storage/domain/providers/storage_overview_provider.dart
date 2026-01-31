@@ -32,7 +32,7 @@ final storageOverviewProvider = FutureProvider<StorageOverview>((ref) async {
     );
   }
 
-  // Estimate freeable from the current delete queue
+  // Estimate freeable from the current delete queue (small list, OK to iterate)
   final deleteQueue = ref.read(deleteQueueProvider);
   int freeableBytes = 0;
   for (final id in deleteQueue) {
@@ -41,35 +41,33 @@ final storageOverviewProvider = FutureProvider<StorageOverview>((ref) async {
     freeableBytes += await photoService.getFileSize(asset);
   }
 
-  // Get all photos and videos to calculate ACTUAL sizes
-  final allPhotos = await photoService.getAllPhotos(page: 0, size: 500, type: RequestType.image);
-  final allVideos = await photoService.getAllPhotos(page: 0, size: 200, type: RequestType.video);
-
-  // Calculate actual bytes for photos
-  int photosBytes = 0;
-  int screenshotsBytes = 0;
+  // Use FAST native API counts instead of loading all photos
+  final photoCount = await photoService.getPhotoCount(type: RequestType.image);
+  final videoCount = await photoService.getPhotoCount(type: RequestType.video);
+  
+  // Get screenshot count from dedicated album (fast)
   int screenshotCount = 0;
   
-  for (final photo in allPhotos) {
-    final size = await photoService.getFileSize(photo);
-    if (photoService.isScreenshot(photo)) {
-      screenshotsBytes += size;
-      screenshotCount++;
-    } else {
-      photosBytes += size;
+  // Quick sample to estimate screenshots - get screenshot album count if available
+  final albums = await PhotoManager.getAssetPathList(type: RequestType.image, hasAll: false);
+  for (final album in albums) {
+    final name = album.name.toLowerCase();
+    if (name.contains('screenshot') || name.contains('screen capture')) {
+      screenshotCount = await album.assetCountAsync;
+      break;
     }
   }
-
-  // Calculate actual bytes for videos
-  int videosBytes = 0;
-  for (final video in allVideos) {
-    final size = await photoService.getFileSize(video);
-    videosBytes += size;
-  }
-
-  final photoCount = allPhotos.length - screenshotCount;
-  final videoCount = allVideos.length;
-
+  
+  // Estimate sizes using average file sizes (much faster than reading each file)
+  // Average photo: ~3MB, Average video: ~50MB, Average screenshot: ~500KB
+  const avgPhotoBytes = 3 * 1024 * 1024;      // 3 MB
+  const avgVideoBytes = 50 * 1024 * 1024;     // 50 MB  
+  const avgScreenshotBytes = 500 * 1024;      // 500 KB
+  
+  final photosBytes = (photoCount - screenshotCount).clamp(0, photoCount) * avgPhotoBytes;
+  final videosBytes = videoCount * avgVideoBytes;
+  final screenshotsBytes = screenshotCount * avgScreenshotBytes;
+  
   // Total media usage
   final totalMediaBytes = photosBytes + videosBytes + screenshotsBytes;
 
@@ -81,9 +79,10 @@ final storageOverviewProvider = FutureProvider<StorageOverview>((ref) async {
   // Build categories - ONLY media, no "Apps & Other"
   final categories = <StorageCategory>[];
   
-  if (photosBytes > 0 || photoCount > 0) {
+  final actualPhotoCount = (photoCount - screenshotCount).clamp(0, photoCount);
+  if (photosBytes > 0 || actualPhotoCount > 0) {
     categories.add(StorageCategory(
-      name: 'Photos$statusSuffix ($photoCount)',
+      name: 'Photos$statusSuffix ($actualPhotoCount)',
       icon: Icons.photo_camera_rounded,
       color: AppColors.primary,
       bytes: photosBytes,

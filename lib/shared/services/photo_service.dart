@@ -134,4 +134,34 @@ class PhotoService {
     if (file == null) return 0;
     return await file.length();
   }
+  /// Get recently deleted photos from the system album
+  Future<List<AssetEntity>> getRecentlyDeletedPhotos({
+    int page = 0,
+    int size = 100,
+  }) async {
+    final albums = await PhotoManager.getAssetPathList(
+      type: RequestType.image,
+      hasAll: false,
+      onlyAll: false,
+    );
+
+    AssetPathEntity? deletedAlbum;
+    for (final a in albums) {
+      // Check for "Recently Deleted" album
+      // iOS ID for Recently Deleted is usually specific, but generic name check is safer fallback
+      if (a.isAll) continue;
+      
+      final name = a.name.toLowerCase();
+      if (name.contains('recently deleted') || name.contains('deleted')) {
+        deletedAlbum = a;
+        break;
+      }
+    }
+
+    if (deletedAlbum != null) {
+      return await getAssetsFromAlbum(deletedAlbum, page: page, size: size);
+    }
+    
+    return [];
+  }
 }

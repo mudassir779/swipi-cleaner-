@@ -4,8 +4,9 @@ import '../models/duplicate_group.dart';
 import '../services/duplicate_detector.dart';
 
 /// Provider for duplicate photo groups
+/// Uses allPhotosProvider to scan the entire library (not just first 100 photos)
 final duplicatesProvider = FutureProvider<List<DuplicateGroup>>((ref) async {
-  final photos = await ref.watch(photosProvider(0).future);
+  final photos = await ref.watch(allPhotosProvider.future);
   final detector = DuplicateDetector();
   return await detector.findDuplicates(photos);
 });

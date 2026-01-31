@@ -48,8 +48,8 @@ class SmartCollectionsScreen extends ConsumerWidget {
           ),
         ),
         data: (photos) {
-          // Calculate collection counts
-          final largeFiles = photos.where((p) => (p.fileSize ?? 0) > 10 * 1024 * 1024).toList();
+          // Calculate collection counts - use estimatedSize for fast estimation
+          final largeFiles = photos.where((p) => p.estimatedSize > 10 * 1024 * 1024).toList();
           // Check for screenshots by looking at asset title or relative path
           final screenshots = photos.where((p) => 
             (p.title?.toLowerCase().contains('screenshot') ?? false) ||
@@ -61,11 +61,11 @@ class SmartCollectionsScreen extends ConsumerWidget {
           final similarCount = (photos.length * 0.1).round();
 
           final largeFilesSize = largeFiles.fold<int>(
-            0, (sum, p) => sum + (p.fileSize ?? 0));
+            0, (sum, p) => sum + p.estimatedSize);
           final screenshotsSize = screenshots.fold<int>(
-            0, (sum, p) => sum + (p.fileSize ?? 0));
+            0, (sum, p) => sum + p.estimatedSize);
           final oldPhotosSize = oldPhotos.fold<int>(
-            0, (sum, p) => sum + (p.fileSize ?? 0));
+            0, (sum, p) => sum + p.estimatedSize);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),

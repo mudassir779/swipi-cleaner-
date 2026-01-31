@@ -42,7 +42,7 @@ class PhotoGridItem extends StatelessWidget {
                   image: AssetEntityImageProvider(
                     asset,
                     isOriginal: false,
-                    thumbnailSize: ThumbnailSize(360, 360),
+                    thumbnailSize: ThumbnailSize(240, 240),
                   ),
                   fit: BoxFit.cover,
                   frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {

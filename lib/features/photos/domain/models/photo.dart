@@ -51,18 +51,28 @@ class Photo {
 
   /// Get formatted file size
   String get formattedSize {
-    if (fileSize == null) return 'Unknown';
-    final sizeInMB = fileSize! / (1024 * 1024);
+    final size = fileSize ?? estimatedSize;
+    if (size == 0) return 'Unknown';
+    final sizeInMB = size / (1024 * 1024);
     if (sizeInMB >= 1) {
       return '${sizeInMB.toStringAsFixed(1)} MB';
     }
-    final sizeInKB = fileSize! / 1024;
+    final sizeInKB = size / 1024;
     return '${sizeInKB.toStringAsFixed(0)} KB';
+  }
+
+  /// Estimate file size from dimensions when actual size isn't loaded
+  /// Uses ~3 bytes per pixel (RGB) with typical JPEG compression ratio of 10:1
+  int get estimatedSize {
+    if (fileSize != null) return fileSize!;
+    // Estimate: width * height * 3 bytes RGB / 10 compression ratio
+    return (width * height * 3) ~/ 10;
   }
 
   /// Check if photo is large (>10MB)
   bool get isLarge {
-    return fileSize != null && fileSize! > 10 * 1024 * 1024;
+    final size = fileSize ?? estimatedSize;
+    return size > 10 * 1024 * 1024;
   }
 
   /// Check if photo is old (>1 year)
