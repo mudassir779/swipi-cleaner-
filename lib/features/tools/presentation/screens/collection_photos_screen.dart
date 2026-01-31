@@ -21,16 +21,56 @@ enum CollectionType {
 final collectionPhotosProvider = FutureProvider.family<List<Photo>, CollectionType>((ref, type) async {
   final allPhotos = await ref.watch(allPhotosProvider.future);
   
+  List<Photo> filtered = [];
+
   switch (type) {
     case CollectionType.large:
-      return allPhotos.where((p) => (p.fileSize ?? 0) > 10 * 1024 * 1024).toList();
+      // Optimized Large File Search:
+      // 1. Check ALL videos (most likely to be large)
+      // 2. Check photos, but maybe limit checking to avoid performance issues if library is huge? 
+      //    For now, we'll check all videos and photos since we need to find them.
+      //    To be safe, we'll prioritize videos.
+      
+      final videos = allPhotos.where((p) => p.asset.type == AssetType.video).toList();
+      final photos = allPhotos.where((p) => p.asset.type == AssetType.image).toList();
+      
+      // Hydrate videos first (higher probability)
+      final hydratedVideos = await Future.wait(
+        videos.map((p) => Photo.fromAsset(p.asset))
+      );
+      
+      // Hydrate photos (might be slow for huge libraries, but necessary for correctness)
+      // We process photos in batches to avoid choking the UI/Task
+      final largePhotos = <Photo>[];
+      const batchSize = 50;
+      for (var i = 0; i < photos.length; i += batchSize) {
+        final end = (i + batchSize < photos.length) ? i + batchSize : photos.length;
+        final batch = photos.sublist(i, end);
+        final hydratedBatch = await Future.wait(batch.map((p) => Photo.fromAsset(p.asset)));
+        largePhotos.addAll(hydratedBatch.where((p) => (p.fileSize ?? 0) > 10 * 1024 * 1024));
+        
+        // Safety break if we found enough to populate the UI (optional optimization)
+        // if (largePhotos.length > 50) break; 
+      }
+      
+      final largeVideos = hydratedVideos.where((p) => (p.fileSize ?? 0) > 10 * 1024 * 1024).toList();
+      
+      return [...largeVideos, ...largePhotos]..sort((a, b) => (b.fileSize ?? 0).compareTo(a.fileSize ?? 0));
+
     case CollectionType.old:
-      return allPhotos.where((p) => p.isOld).toList();
+      // Filter first (fast)
+      final candidates = allPhotos.where((p) => p.isOld).toList();
+      // Then hydrate sizes (slow but minimal set)
+      return await Future.wait(candidates.map((p) => Photo.fromAsset(p.asset)));
+
     case CollectionType.screenshots:
-      return allPhotos.where((p) => 
+      // Filter first (fast)
+      final candidates = allPhotos.where((p) => 
         (p.title?.toLowerCase().contains('screenshot') ?? false) ||
         (p.asset.relativePath?.toLowerCase().contains('screenshot') ?? false)
       ).toList();
+      // Then hydrate sizes
+      return await Future.wait(candidates.map((p) => Photo.fromAsset(p.asset)));
   }
 });
 

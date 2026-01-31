@@ -410,21 +410,20 @@ class _AnimatedMenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Staggered animation for each menu item
-    // Cap delay at 0.5 to prevent exceeding 1.0 duration total
-    final delay = (index * 0.05).clamp(0.0, 0.5);
+    // Enhanced staggered animation with more noticeable delays
+    final delay = (index * 0.06).clamp(0.0, 0.45);
+    final endTime = math.min(1.0, 0.55 + delay);
 
     final slideAnimation = Tween<Offset>(
-      begin: const Offset(-0.3, 0),
+      begin: const Offset(-0.5, 0),
       end: Offset.zero,
     ).animate(
       CurvedAnimation(
         parent: animation,
-        // Ensure end <= 1.0
         curve: Interval(
           delay,
-          math.min(1.0, 0.4 + delay), // Reduced duration
-          curve: Curves.easeOutCubic,
+          endTime,
+          curve: Curves.easeOutBack,
         ),
       ),
     );
@@ -432,11 +431,21 @@ class _AnimatedMenuItem extends StatelessWidget {
     final fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: animation,
-        // Ensure end <= 1.0
         curve: Interval(
           delay,
-          math.min(1.0, 0.4 + delay), // Reduced duration and capped at 1.0
+          endTime,
           curve: Curves.easeOut,
+        ),
+      ),
+    );
+
+    final scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
+      CurvedAnimation(
+        parent: animation,
+        curve: Interval(
+          delay,
+          endTime,
+          curve: Curves.easeOutBack,
         ),
       ),
     );
@@ -445,10 +454,14 @@ class _AnimatedMenuItem extends StatelessWidget {
       animation: animation,
       builder: (context, _) {
         return Transform.translate(
-          offset: Offset(slideAnimation.value.dx * 50, 0),
-          child: Opacity(
-            opacity: fadeAnimation.value.clamp(0.0, 1.0),
-            child: child,
+          offset: Offset(slideAnimation.value.dx * 80, 0),
+          child: Transform.scale(
+            scale: scaleAnimation.value,
+            alignment: Alignment.centerLeft,
+            child: Opacity(
+              opacity: fadeAnimation.value.clamp(0.0, 1.0),
+              child: child,
+            ),
           ),
         );
       },

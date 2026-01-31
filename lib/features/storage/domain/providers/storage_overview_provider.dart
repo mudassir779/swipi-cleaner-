@@ -13,30 +13,26 @@ final storageOverviewProvider = FutureProvider<StorageOverview>((ref) async {
   final deviceStorageService = DeviceStorageService();
   final photoService = PhotoService();
   final storageInfo = await deviceStorageService.getStorageInfo();
+  final capacityBytes = storageInfo.totalBytes;
 
   final hasPhotosPermission = await photoService.hasPermission();
   if (!hasPhotosPermission) {
-    final used = storageInfo.usedBytes;
-    final cap = storageInfo.totalBytes;
     return StorageOverview(
-      estimatedUsedBytes: used,
-      estimatedCapacityBytes: cap,
+      estimatedUsedBytes: 0,
+      estimatedCapacityBytes: capacityBytes,
       estimatedFreeableBytes: 0,
       categories: [
         StorageCategory(
-          name: 'Other',
-          icon: Icons.folder_rounded,
+          name: 'No Permission',
+          icon: Icons.lock_rounded,
           color: const Color(0xFF64748B),
-          bytes: used,
+          bytes: 0,
         ),
       ],
     );
   }
 
-  final usedBytes = storageInfo.usedBytes;
-  final capacityBytes = storageInfo.totalBytes;
-
-  // Estimate freeable from the current delete queue (accurate for queued items).
+  // Estimate freeable from the current delete queue
   final deleteQueue = ref.read(deleteQueueProvider);
   int freeableBytes = 0;
   for (final id in deleteQueue) {
@@ -45,94 +41,88 @@ final storageOverviewProvider = FutureProvider<StorageOverview>((ref) async {
     freeableBytes += await photoService.getFileSize(asset);
   }
 
-  final photoCount = await photoService.getPhotoCount(type: RequestType.image);
-  final videoCount = await photoService.getPhotoCount(type: RequestType.video);
+  // Get all photos and videos to calculate ACTUAL sizes
+  final allPhotos = await photoService.getAllPhotos(page: 0, size: 500, type: RequestType.image);
+  final allVideos = await photoService.getAllPhotos(page: 0, size: 200, type: RequestType.video);
 
-  // Estimate average sizes using a small sample (keeps it fast).
-  final sampleImages = <AssetEntity>[
-    ...await photoService.getAllPhotos(page: 0, size: 40, type: RequestType.image),
-    ...await photoService.getAllPhotos(page: 1, size: 40, type: RequestType.image),
-    ...await photoService.getAllPhotos(page: 2, size: 40, type: RequestType.image),
-  ];
-  final sampleVideos = <AssetEntity>[
-    ...await photoService.getAllPhotos(page: 0, size: 20, type: RequestType.video),
-    ...await photoService.getAllPhotos(page: 1, size: 20, type: RequestType.video),
-  ];
-
-  int imgBytesTotal = 0;
-  for (final a in sampleImages) {
-    imgBytesTotal += await photoService.getFileSize(a);
-  }
-  int vidBytesTotal = 0;
-  for (final v in sampleVideos) {
-    vidBytesTotal += await photoService.getFileSize(v);
+  // Calculate actual bytes for photos
+  int photosBytes = 0;
+  int screenshotsBytes = 0;
+  int screenshotCount = 0;
+  
+  for (final photo in allPhotos) {
+    final size = await photoService.getFileSize(photo);
+    if (photoService.isScreenshot(photo)) {
+      screenshotsBytes += size;
+      screenshotCount++;
+    } else {
+      photosBytes += size;
+    }
   }
 
-  final avgImg = sampleImages.isEmpty ? 0 : (imgBytesTotal ~/ sampleImages.length);
-  final avgVid = sampleVideos.isEmpty ? 0 : (vidBytesTotal ~/ sampleVideos.length);
-
-  final estimatedPhotosBytes = avgImg * photoCount;
-  final estimatedVideosBytes = avgVid * videoCount;
-
-  // Rough screenshots estimate from sample ratio
-  int screenshotSampleCount = 0;
-  for (final a in sampleImages) {
-    if (photoService.isScreenshot(a)) screenshotSampleCount += 1;
+  // Calculate actual bytes for videos
+  int videosBytes = 0;
+  for (final video in allVideos) {
+    final size = await photoService.getFileSize(video);
+    videosBytes += size;
   }
-  final screenshotRatio = sampleImages.isEmpty ? 0.0 : (screenshotSampleCount / sampleImages.length);
-  final estimatedScreenshotsBytes = (estimatedPhotosBytes * screenshotRatio).round();
-  final estimatedPhotosNoScreenshotsBytes =
-      (estimatedPhotosBytes - estimatedScreenshotsBytes).clamp(0, estimatedPhotosBytes);
 
-  // Make breakdown sum to device used storage.
-  int photosBytes = estimatedPhotosNoScreenshotsBytes;
-  int videosBytes = estimatedVideosBytes;
-  int screenshotsBytes = estimatedScreenshotsBytes;
+  final photoCount = allPhotos.length - screenshotCount;
+  final videoCount = allVideos.length;
 
-  final mediaTotal = photosBytes + videosBytes + screenshotsBytes;
-  int otherBytes;
-  if (usedBytes > 0 && mediaTotal > usedBytes) {
-    // Rare but possible when sampling overestimates sizes.
-    // Scale media buckets down so (photos+videos+screenshots) == usedBytes.
-    final scale = usedBytes / mediaTotal;
-    photosBytes = (photosBytes * scale).floor();
-    videosBytes = (videosBytes * scale).floor();
-    screenshotsBytes = (usedBytes - photosBytes - videosBytes).clamp(0, usedBytes);
-    otherBytes = 0;
-  } else {
-    otherBytes = (usedBytes - mediaTotal).clamp(0, usedBytes);
+  // Total media usage
+  final totalMediaBytes = photosBytes + videosBytes + screenshotsBytes;
+
+  // Check permission state for UI
+  final permState = await PhotoManager.requestPermissionExtend();
+  final isLimited = permState == PermissionState.limited;
+  final statusSuffix = isLimited ? ' (Limited)' : '';
+
+  // Build categories - ONLY media, no "Apps & Other"
+  final categories = <StorageCategory>[];
+  
+  if (photosBytes > 0 || photoCount > 0) {
+    categories.add(StorageCategory(
+      name: 'Photos$statusSuffix ($photoCount)',
+      icon: Icons.photo_camera_rounded,
+      color: AppColors.primary,
+      bytes: photosBytes,
+    ));
+  }
+  
+  if (videosBytes > 0 || videoCount > 0) {
+    categories.add(StorageCategory(
+      name: 'Videos$statusSuffix ($videoCount)',
+      icon: Icons.videocam_rounded,
+      color: const Color(0xFF3B82F6),
+      bytes: videosBytes,
+    ));
+  }
+  
+  if (screenshotsBytes > 0 || screenshotCount > 0) {
+    categories.add(StorageCategory(
+      name: 'Screenshots ($screenshotCount)',
+      icon: Icons.image_rounded,
+      color: const Color(0xFF06B6D4),
+      bytes: screenshotsBytes,
+    ));
+  }
+
+  // If no media at all, show empty state
+  if (categories.isEmpty) {
+    categories.add(StorageCategory(
+      name: 'No Media Found',
+      icon: Icons.photo_library_outlined,
+      color: const Color(0xFF94A3B8),
+      bytes: 0,
+    ));
   }
 
   return StorageOverview(
-    estimatedUsedBytes: usedBytes,
+    estimatedUsedBytes: totalMediaBytes,
     estimatedCapacityBytes: capacityBytes,
     estimatedFreeableBytes: freeableBytes,
-    categories: [
-      StorageCategory(
-        name: 'Photos',
-        icon: Icons.photo_camera_rounded,
-        color: AppColors.primary, // SkyBlue
-        bytes: photosBytes,
-      ),
-      StorageCategory(
-        name: 'Videos',
-        icon: Icons.videocam_rounded,
-        color: const Color(0xFF3B82F6), // Blue
-        bytes: videosBytes,
-      ),
-      StorageCategory(
-        name: 'Screenshots',
-        icon: Icons.image_rounded,
-        color: const Color(0xFF06B6D4), // Cyan
-        bytes: screenshotsBytes,
-      ),
-      StorageCategory(
-        name: 'Other',
-        icon: Icons.folder_rounded,
-        color: const Color(0xFF64748B), // Slate
-        bytes: otherBytes,
-      ),
-    ],
+    categories: categories,
   );
 });
 

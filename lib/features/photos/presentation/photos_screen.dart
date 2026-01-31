@@ -435,9 +435,9 @@ class _AnimatedMenuButtonState extends State<_AnimatedMenuButton>
         ),
         child: Container(
           margin: const EdgeInsets.only(left: 16),
-          width: 44,
-          height: 44,
-          padding: const EdgeInsets.all(10),
+          width: 48,
+          height: 48,
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Theme.of(context).cardTheme.color,
             borderRadius: BorderRadius.circular(14),
@@ -455,13 +455,13 @@ class _AnimatedMenuButtonState extends State<_AnimatedMenuButton>
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _buildLine(width: 20),
-              const SizedBox(height: 5),
-              _buildLine(width: 14),
-              const SizedBox(height: 5),
-              _buildLine(width: 20),
+              _buildLine(width: 22),
+              const SizedBox(height: 4),
+              _buildLine(width: 16),
+              const SizedBox(height: 4),
+              _buildLine(width: 22),
             ],
           ),
         ),

@@ -16,6 +16,9 @@ class _ToolsScreenState extends State<ToolsScreen> with TickerProviderStateMixin
   late final AnimationController _headerController;
   late final List<AnimationController> _itemControllers;
 
+  // Total number of tool cards
+  static const int _totalToolCards = 2;
+
   @override
   void initState() {
     super.initState();
@@ -31,7 +34,7 @@ class _ToolsScreenState extends State<ToolsScreen> with TickerProviderStateMixin
     );
 
     _itemControllers = List.generate(
-      2,
+      _totalToolCards,
       (_) => AnimationController(
         duration: const Duration(milliseconds: 600),
         vsync: this,
@@ -65,15 +68,16 @@ class _ToolsScreenState extends State<ToolsScreen> with TickerProviderStateMixin
   }
 
   Widget _animatedEntry({required int index, required Widget child}) {
+    final safeIndex = index.clamp(0, _itemControllers.length - 1);
     return ScaleTransition(
       scale: Tween<double>(begin: 0.9, end: 1.0).animate(
         CurvedAnimation(
-          parent: _itemControllers[index],
+          parent: _itemControllers[safeIndex],
           curve: Curves.easeOutBack,
         ),
       ),
       child: FadeTransition(
-        opacity: _itemControllers[index],
+        opacity: _itemControllers[safeIndex],
         child: child,
       ),
     );
@@ -110,6 +114,7 @@ class _ToolsScreenState extends State<ToolsScreen> with TickerProviderStateMixin
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // CLEANUP SECTION
                         const _SectionLabel(title: 'CLEANUP'),
                         const SizedBox(height: 8),
                         Row(
@@ -138,8 +143,8 @@ class _ToolsScreenState extends State<ToolsScreen> with TickerProviderStateMixin
                                   title: 'Social Media Cleaner',
                                   subtitle: 'WhatsApp & Telegram',
                                   gradientColors: const [
-                                    Color(0xFF4DD0E1),
-                                    Color(0xFF26C6DA),
+                                    Color(0xFF25D366),
+                                    Color(0xFF128C7E),
                                   ],
                                   onTap: () => context.push('/social-media-cleaner'),
                                 ),
@@ -147,6 +152,8 @@ class _ToolsScreenState extends State<ToolsScreen> with TickerProviderStateMixin
                             ),
                           ],
                         ),
+                        const SizedBox(height: 24),
+
                       ],
                     ),
                   ),

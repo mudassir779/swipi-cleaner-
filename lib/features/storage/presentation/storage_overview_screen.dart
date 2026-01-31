@@ -17,7 +17,7 @@ class StorageOverviewScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Storage Stats'),
+        title: const Text('Media Storage'),
       ),
       body: SafeArea(
         child: overviewAsync.when(
@@ -59,12 +59,12 @@ class StorageOverviewScreen extends ConsumerWidget {
                           AnimatedDonutChart(
                             progress: pct,
                             gradient: AppColors.gradientPrimary,
-                            centerValue: '${(pct * 100).round()}%',
-                            centerLabel: 'used',
+                            centerValue: formatBytes(used),
+                            centerLabel: 'media',
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            '${formatBytes(used)} of ${formatBytes(cap)} used',
+                            'Total media storage: ${formatBytes(used)}',
                             style: const TextStyle(
                               color: AppColors.textPrimary,
                               fontSize: 16,

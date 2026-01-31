@@ -55,30 +55,30 @@ class _StatsCardState extends State<StatsCard> {
                 ),
               ],
             ),
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: widget.gradientColors,
                     ),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
                         color: widget.gradientColors.first.withValues(alpha: 0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
-                  child: Icon(widget.icon, color: Colors.white, size: 24),
+                  child: Icon(widget.icon, color: Colors.white, size: 20),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +89,7 @@ class _StatsCardState extends State<StatsCard> {
                       child: Text(
                         widget.value,
                         style: AppTextStyles.statLarge.copyWith(
-                          fontSize: 36,
+                          fontSize: 28,
                           color: AppColors.textPrimary,
                           fontWeight: FontWeight.w700,
                           height: 1.1,
@@ -101,7 +101,7 @@ class _StatsCardState extends State<StatsCard> {
                     Text(
                       widget.label,
                       style: AppTextStyles.statLabel.copyWith(
-                        fontSize: 14,
+                        fontSize: 12,
                         fontWeight: FontWeight.w500,
                         color: AppColors.textSecondary,
                       ),
