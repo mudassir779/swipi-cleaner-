@@ -1,107 +1,159 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../../core/widgets/animations.dart';
 import '../../../app/main_scaffold.dart';
 
 /// Tools tab screen with categorized tool cards
-class ToolsScreen extends StatelessWidget {
+class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
+
+  @override
+  State<ToolsScreen> createState() => _ToolsScreenState();
+}
+
+class _ToolsScreenState extends State<ToolsScreen> with TickerProviderStateMixin {
+  late final AnimationController _fadeController;
+  late final AnimationController _headerController;
+  late final List<AnimationController> _itemControllers;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 900),
+      vsync: this,
+    );
+
+    _headerController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _itemControllers = List.generate(
+      2,
+      (_) => AnimationController(
+        duration: const Duration(milliseconds: 600),
+        vsync: this,
+      ),
+    );
+
+    _startAnimations();
+  }
+
+  Future<void> _startAnimations() async {
+    _fadeController.forward();
+    await Future.delayed(const Duration(milliseconds: 80));
+    if (!mounted) return;
+    _headerController.forward();
+
+    for (int i = 0; i < _itemControllers.length; i++) {
+      await Future.delayed(const Duration(milliseconds: 90));
+      if (!mounted) return;
+      _itemControllers[i].forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _headerController.dispose();
+    for (final c in _itemControllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Widget _animatedEntry({required int index, required Widget child}) {
+    return ScaleTransition(
+      scale: Tween<double>(begin: 0.9, end: 1.0).animate(
+        CurvedAnimation(
+          parent: _itemControllers[index],
+          curve: Curves.easeOutBack,
+        ),
+      ),
+      child: FadeTransition(
+        opacity: _itemControllers[index],
+        child: child,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return MainScaffold(
       currentIndex: 2,
       child: Scaffold(
-        // backgroundColor: removed to use theme default
-        appBar: AppBar(
-          // backgroundColor: removed to use theme default
-          elevation: 0,
-          toolbarHeight: 70,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Tools',
-                style: TextStyle(
-                  color: Theme.of(context).textTheme.titleLarge?.color,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                'Powerful utilities for your library',
-                style: TextStyle(
-                  color: Theme.of(context).textTheme.bodySmall?.color,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-        ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Cleanup Section with animation
-              FadeSlideIn(
-                delay: const Duration(milliseconds: 0),
-                child: Text('CLEANUP', style: AppTextStyles.sectionHeader),
-              ),
-              const SizedBox(height: 12),
-              FadeSlideIn(
-                delay: const Duration(milliseconds: 50),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _ToolCard(
-                        icon: Icons.auto_awesome_rounded,
-                        title: 'Smart Collections',
-                        subtitle: 'Auto-organized',
-                        gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
-                        onTap: () => context.push('/smart-collections'),
+        backgroundColor: const Color(0xFFF5F5F5),
+        body: SafeArea(
+          child: FadeTransition(
+            opacity: _fadeController,
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ScaleTransition(
+                    scale: Tween<double>(begin: 0.96, end: 1.0).animate(
+                      CurvedAnimation(
+                        parent: _headerController,
+                        curve: Curves.easeOutBack,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _ToolCard(
-                        icon: Icons.cleaning_services_rounded,
-                        title: 'Social Media Cleaner',
-                        subtitle: 'WhatsApp & Telegram',
-                        gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
-                        onTap: () => context.push('/social-media-cleaner'),
-                      ),
+                    child: const _ToolsHeader(
+                      title: 'Tools',
+                      subtitle: 'Powerful utilities for your library',
                     ),
-                  ],
-                ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const _SectionLabel(title: 'CLEANUP'),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _animatedEntry(
+                                index: 0,
+                                child: _ToolCard(
+                                  icon: Icons.delete_outline,
+                                  title: 'Recently Deleted',
+                                  subtitle: '30-day recovery',
+                                  gradientColors: const [
+                                    Color(0xFF4DD0E1),
+                                    Color(0xFF26C6DA),
+                                  ],
+                                  onTap: () => context.push('/recently-deleted'),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _animatedEntry(
+                                index: 1,
+                                child: _ToolCard(
+                                  icon: Icons.cleaning_services,
+                                  title: 'Social Media Cleaner',
+                                  subtitle: 'WhatsApp & Telegram',
+                                  gradientColors: const [
+                                    Color(0xFF4DD0E1),
+                                    Color(0xFF26C6DA),
+                                  ],
+                                  onTap: () => context.push('/social-media-cleaner'),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 80),
+                ],
               ),
-
-              const SizedBox(height: 24),
-
-              // Storage Section with animation
-              FadeSlideIn(
-                delay: const Duration(milliseconds: 100),
-                child: Text('STORAGE', style: AppTextStyles.sectionHeader),
-              ),
-              const SizedBox(height: 12),
-              FadeSlideIn(
-                delay: const Duration(milliseconds: 150),
-                child: _ToolCard(
-                  icon: Icons.delete_sweep_rounded,
-                  title: 'Recently Deleted',
-                  subtitle: '30-day recovery',
-                  gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
-                  onTap: () => context.push('/recently-deleted'),
-                ),
-              ),
-
-              const SizedBox(height: 80),
-            ],
+            ),
           ),
         ),
       ),
@@ -109,7 +161,78 @@ class ToolsScreen extends StatelessWidget {
   }
 }
 
-class _ToolCard extends StatefulWidget {
+class _ToolsHeader extends StatelessWidget {
+  final String title;
+  final String subtitle;
+
+  const _ToolsHeader({
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.blue.shade50,
+            Colors.white,
+          ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String title;
+
+  const _SectionLabel({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey.shade400,
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+}
+
+class _ToolCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
@@ -125,90 +248,85 @@ class _ToolCard extends StatefulWidget {
   });
 
   @override
-  State<_ToolCard> createState() => _ToolCardState();
-}
-
-class _ToolCardState extends State<_ToolCard> {
-  bool _isPressed = false;
-
-  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedScale(
-        scale: _isPressed ? 0.95 : 1.0,
-        duration: const Duration(milliseconds: 100),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(24),
         child: Container(
-          padding: const EdgeInsets.all(16),
-          height: 140,
+          constraints: const BoxConstraints(minHeight: 170),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardTheme.color,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: widget.gradientColors.first.withValues(alpha: 0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
+            border: Border.all(
+              color: Colors.grey.shade100,
+              width: 1,
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: widget.gradientColors,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: widget.gradientColors.first.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: gradientColors,
                     ),
-                  ],
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: gradientColors[0].withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
-                child: Icon(widget.icon, color: Colors.white, size: 24),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.title,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).textTheme.titleMedium?.color,
-                      letterSpacing: -0.3,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 16),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                    height: 1.3,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    widget.subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textSecondary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade600,
                   ),
-                ],
-              ),
-            ],
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ),
       ),

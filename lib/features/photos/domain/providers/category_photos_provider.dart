@@ -10,8 +10,12 @@ final screenshotsProvider = FutureProvider<List<Photo>>((ref) async {
   final hasPermission = await service.hasPermission();
   if (!hasPermission) return [];
 
-  final allPhotos = await ref.watch(photosProvider(0).future);
-  return allPhotos.where((p) => service.isScreenshot(p.asset)).toList();
+  // Prefer the OS "Screenshots" album when present (more reliable than filename heuristics).
+  final assets = <AssetEntity>[
+    ...await service.getScreenshots(page: 0, size: 200),
+    ...await service.getScreenshots(page: 1, size: 200),
+  ];
+  return assets.map((a) => Photo.fromAssetSync(a)).toList();
 });
 
 /// Videos (first page) - enough for category preview & swipe flows.

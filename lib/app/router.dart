@@ -26,9 +26,8 @@ import '../features/home/presentation/home_screen.dart';
 
 /// Custom page transitions for smooth navigation
 class _FadeTransitionPage extends CustomTransitionPage<void> {
-  _FadeTransitionPage({required Widget child})
+  _FadeTransitionPage({required super.child})
       : super(
-          child: child,
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(
               opacity: CurveTween(curve: Curves.easeInOut).animate(animation),
@@ -40,9 +39,8 @@ class _FadeTransitionPage extends CustomTransitionPage<void> {
 }
 
 class _SlideUpTransitionPage extends CustomTransitionPage<void> {
-  _SlideUpTransitionPage({required Widget child})
+  _SlideUpTransitionPage({required super.child})
       : super(
-          child: child,
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             const begin = Offset(0.0, 1.0);
             const end = Offset.zero;
@@ -60,9 +58,8 @@ class _SlideUpTransitionPage extends CustomTransitionPage<void> {
 }
 
 class _SlideRightTransitionPage extends CustomTransitionPage<void> {
-  _SlideRightTransitionPage({required Widget child})
+  _SlideRightTransitionPage({required super.child})
       : super(
-          child: child,
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             const begin = Offset(1.0, 0.0);
             const end = Offset.zero;

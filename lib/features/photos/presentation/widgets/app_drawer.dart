@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/premium_ui.dart';
 import 'dart:math' as math;
 
 /// App navigation drawer - Animated Apple-style design
@@ -258,17 +257,17 @@ class _AppDrawerState extends ConsumerState<AppDrawer>
         route: '/storage-stats',
       ),
       _MenuItemData(
-        icon: Icons.settings_outlined,
-        label: 'Settings',
-        gradientColors: const [Color(0xFF718096), Color(0xFFA0AEC0)],
-        route: '/settings',
-      ),
-      _MenuItemData(
         icon: Icons.workspace_premium_outlined,
         label: 'Upgrade to Premium',
         gradientColors: const [Color(0xFFFFD700), Color(0xFFFFA500)],
         route: '/premium',
         isPremium: true,
+      ),
+      _MenuItemData(
+        icon: Icons.settings_outlined,
+        label: 'Settings',
+        gradientColors: const [Color(0xFF718096), Color(0xFFA0AEC0)],
+        route: '/settings',
       ),
     ];
 

@@ -16,12 +16,13 @@ class MainScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       body: child,
       bottomNavigationBar: Container(
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color ?? AppColors.snow,
+          color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
@@ -102,6 +103,7 @@ class _NavItemState extends State<_NavItem> {
 
   @override
   Widget build(BuildContext context) {
+    final accent = widget.gradientColors.first;
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) {
@@ -114,73 +116,33 @@ class _NavItemState extends State<_NavItem> {
         scale: _isPressed ? 0.9 : 1.0,
         duration: const Duration(milliseconds: 100),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
+          duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
-          padding: EdgeInsets.symmetric(
-            horizontal: widget.isSelected ? 16 : 12,
-            vertical: 8,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.transparent, // No background box
-            borderRadius: BorderRadius.circular(16),
+            color: widget.isSelected ? accent.withValues(alpha: 0.14) : Colors.transparent,
+            borderRadius: BorderRadius.circular(18),
           ),
-          child: Row(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Only apply gradient to selected icon, gray for unselected
-              widget.isSelected
-                  ? ShaderMask(
-                      shaderCallback: (Rect bounds) {
-                        return LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: widget.gradientColors,
-                        ).createShader(bounds);
-                      },
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 200),
-                        child: Icon(
-                          widget.activeIcon,
-                          key: ValueKey(widget.isSelected),
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                      ),
-                    )
-                  : AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      child: Icon(
-                        widget.icon,
-                        key: ValueKey(widget.isSelected),
-                        color: AppColors.textSecondary,
-                        size: 26,
-                      ),
-                    ),
-              AnimatedSize(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeOutCubic,
-                child: widget.isSelected
-                    ? Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: ShaderMask(
-                          shaderCallback: (Rect bounds) {
-                            return LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: widget.gradientColors,
-                            ).createShader(bounds);
-                          },
-                          child: Text(
-                            widget.label,
-                            style: const TextStyle(
-                              fontSize: 15, // Slightly larger text
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white, // Required for ShaderMask
-                            ),
-                          ),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  widget.isSelected ? widget.activeIcon : widget.icon,
+                  key: ValueKey(widget.isSelected),
+                  color: widget.isSelected ? accent : AppColors.textSecondary,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: widget.isSelected ? FontWeight.w700 : FontWeight.w600,
+                  color: widget.isSelected ? accent : AppColors.textSecondary,
+                ),
               ),
             ],
           ),

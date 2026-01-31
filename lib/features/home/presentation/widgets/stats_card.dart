@@ -3,11 +3,11 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 /// Statistics card widget
-class StatsCard extends StatelessWidget {
+class StatsCard extends StatefulWidget {
   final String label;
   final String value;
   final IconData icon;
-  final Color iconColor;
+  final List<Color> gradientColors;
   final VoidCallback? onTap;
 
   const StatsCard({
@@ -15,71 +15,103 @@ class StatsCard extends StatelessWidget {
     required this.label,
     required this.value,
     required this.icon,
-    required this.iconColor,
+    required this.gradientColors,
     this.onTap,
   });
 
   @override
+  State<StatsCard> createState() => _StatsCardState();
+}
+
+class _StatsCardState extends State<StatsCard> {
+  bool _isPressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      color: AppColors.cardBackground,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(
-          color: AppColors.divider,
-          width: 1,
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: iconColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+    final canTap = widget.onTap != null;
+
+    return AnimatedScale(
+      scale: _isPressed ? 0.96 : 1.0,
+      duration: const Duration(milliseconds: 110),
+      curve: Curves.easeOutCubic,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: widget.onTap,
+          onHighlightChanged: (v) {
+            if (!canTap) return;
+            setState(() => _isPressed = v);
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: widget.gradientColors,
                     ),
-                    child: Icon(
-                      icon,
-                      color: iconColor,
-                      size: 24,
-                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: widget.gradientColors.first.withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  if (onTap != null)
-                    Icon(
-                      Icons.chevron_right,
-                      color: AppColors.textSecondary,
-                      size: 20,
+                  child: Icon(widget.icon, color: Colors.white, size: 24),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        widget.value,
+                        style: AppTextStyles.statLarge.copyWith(
+                          fontSize: 36,
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w700,
+                          height: 1.1,
+                        ),
+                        maxLines: 1,
+                      ),
                     ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                value,
-                style: AppTextStyles.statValue.copyWith(
-                  fontSize: 28,
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w700,
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.label,
+                      style: AppTextStyles.statLabel.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: AppTextStyles.statLabel.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

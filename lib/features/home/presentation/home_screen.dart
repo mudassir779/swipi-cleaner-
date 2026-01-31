@@ -1,22 +1,81 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../app/main_scaffold.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/skeleton_loading.dart';
-import '../../../core/widgets/animations.dart';
-import '../../photos/domain/providers/photo_provider.dart';
 import '../../photos/domain/providers/delete_queue_provider.dart';
 import '../../photos/domain/providers/month_photos_provider.dart';
-import '../../../app/main_scaffold.dart';
+import '../../photos/domain/providers/photo_provider.dart';
+import 'widgets/home_header.dart';
+import 'widgets/quick_action_card.dart';
+import 'widgets/stats_card.dart';
 
 /// Home dashboard screen with statistics and quick actions
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Use fast stats provider for instant photo/video counts
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> with TickerProviderStateMixin {
+  late final AnimationController _fadeController;
+  late final AnimationController _scaleController;
+  late final List<AnimationController> _cardControllers;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+
+    _scaleController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    // 0-3 = stats cards, 4-7 = quick action cards
+    _cardControllers = List.generate(
+      8,
+      (index) => AnimationController(
+        duration: const Duration(milliseconds: 600),
+        vsync: this,
+      ),
+    );
+
+    _startAnimations();
+  }
+
+  Future<void> _startAnimations() async {
+    _fadeController.forward();
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (!mounted) return;
+    _scaleController.forward();
+
+    for (int i = 0; i < _cardControllers.length; i++) {
+      await Future.delayed(const Duration(milliseconds: 80));
+      if (!mounted) return;
+      _cardControllers[i].forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _scaleController.dispose();
+    for (final controller in _cardControllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final statsAsync = ref.watch(photoVideoStatsProvider);
     final deleteQueue = ref.watch(deleteQueueProvider);
     final todayPhotosAsync = ref.watch(todayPhotosProvider);
@@ -24,180 +83,62 @@ class HomeScreen extends ConsumerWidget {
     return MainScaffold(
       currentIndex: 0,
       child: Scaffold(
-        // backgroundColor: removed to use theme default
-        appBar: AppBar(
-          // backgroundColor: removed to use theme default
-          elevation: 0,
-          toolbarHeight: 70,
-          title: Builder(
-            builder: (context) {
-              final theme = Theme.of(context);
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          image: const DecorationImage(
-                            image: AssetImage('assets/images/logo.png'),
-                            fit: BoxFit.cover,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.2),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Swipe to Clean',
-                        style: TextStyle(
-                          color: theme.textTheme.titleLarge?.color,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 52),
-                    child: Text(
-                      'Free up space with a swipe',
-                      style: TextStyle(
-                        color: theme.textTheme.bodySmall?.color,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
         body: RefreshIndicator(
           color: AppColors.primary,
           onRefresh: () async {
             ref.invalidate(photoVideoStatsProvider);
             ref.invalidate(todayPhotosProvider);
           },
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Statistics Cards - now using fast stats provider with animation
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 0),
-                  child: statsAsync.when(
-                    loading: () => const _StatsGridSkeleton(),
-                    error: (e, _) => _buildStatsGrid(0, 0, 0, deleteQueue.length),
-                    data: (stats) {
-                      final photoCount = stats['photos'] ?? 0;
-                      final videoCount = stats['videos'] ?? 0;
-                      final todayCount = todayPhotosAsync.maybeWhen(
-                        data: (t) => t.length,
-                        orElse: () => 0,
-                      );
-                      return _buildStatsGrid(
-                        photoCount, 
-                        videoCount, 
-                        todayCount, 
-                        deleteQueue.length,
-                      );
-                    },
-                  ),
+          child: SafeArea(
+            child: FadeTransition(
+              opacity: _fadeController,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
                 ),
-
-                const SizedBox(height: 24),
-
-                // Quick Actions Section with animation
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 100),
-                  child: Text(
-                    'QUICK ACTIONS',
-                    style: AppTextStyles.sectionHeader,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Quick Action Cards Grid with animation
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 150),
-                  child: GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1.4,
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _QuickActionCard(
-                        icon: Icons.swipe,
-                        title: 'Swipe Review',
-                        subtitle: 'Clean photos fast',
-                        gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
-                        onTap: () => context.push('/swipe-review'),
+                      const SizedBox(height: 10),
+                      _buildHeader(),
+                      const SizedBox(height: 30),
+                      statsAsync.when(
+                        loading: () => const _StatsGridSkeleton(),
+                        error: (e, _) => _buildStatsGrid(0, 0, 0, deleteQueue.length),
+                        data: (stats) {
+                          final photoCount = stats['photos'] ?? 0;
+                          final videoCount = stats['videos'] ?? 0;
+                          final todayCount = todayPhotosAsync.maybeWhen(
+                            data: (t) => t.length,
+                            orElse: () => 0,
+                          );
+                          return _buildStatsGrid(
+                            photoCount,
+                            videoCount,
+                            todayCount,
+                            deleteQueue.length,
+                          );
+                        },
                       ),
-                      _QuickActionCard(
-                        icon: Icons.content_copy,
-                        title: 'Find Duplicates',
-                        subtitle: 'Remove copies',
-                        gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
-                        onTap: () => context.push('/duplicates'),
-                      ),
-                      _QuickActionCard(
-                        icon: Icons.auto_awesome,
-                        title: 'Smart Collections',
-                        subtitle: 'Auto-organized',
-                        gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
-                        onTap: () => context.push('/smart-collections'),
-                      ),
-                      _QuickActionCard(
-                        icon: Icons.compress,
-                        title: 'Compress Photos',
-                        subtitle: 'Save space',
-                        gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
-                        onTap: () => context.push('/compress-photos'),
-                      ),
+                      const SizedBox(height: 35),
+                      _buildSectionTitle('QUICK ACTIONS'),
+                      const SizedBox(height: 15),
+                      _buildQuickActionsGrid(),
+                      const SizedBox(height: 30),
+                      _buildStorageOverview(),
+                      const SizedBox(height: 20),
+                      if (deleteQueue.isNotEmpty)
+                        _DeleteQueueBanner(
+                          count: deleteQueue.length,
+                          onTap: () => context.push('/confirm-delete'),
+                        ),
+                      const SizedBox(height: 80),
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 24),
-
-                // Storage Overview Card with animation
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 250),
-                  child: _StorageOverviewCard(
-                    onTap: () => context.push('/storage-stats'),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Delete Queue Banner (if items present) with animation
-                if (deleteQueue.isNotEmpty)
-                  FadeSlideIn(
-                    delay: const Duration(milliseconds: 300),
-                    child: _DeleteQueueBanner(
-                      count: deleteQueue.length,
-                      onTap: () => context.push('/confirm-delete'),
-                    ),
-                  ),
-
-                const SizedBox(height: 80),
-              ],
+              ),
             ),
           ),
         ),
@@ -205,44 +146,282 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsGrid(int photos, int videos, int today, int deleteQueue) {
+  Widget _buildHeader() {
+    return ScaleTransition(
+      scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+        CurvedAnimation(
+          parent: _scaleController,
+          curve: Curves.easeOutBack,
+        ),
+      ),
+      child: const HomeHeader(),
+    );
+  }
+
+  Widget _animatedCardEntry({required int index, required Widget child}) {
+    return ScaleTransition(
+      scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+        CurvedAnimation(
+          parent: _cardControllers[index],
+          curve: Curves.easeOutBack,
+        ),
+      ),
+      child: FadeTransition(
+        opacity: _cardControllers[index],
+        child: child,
+      ),
+    );
+  }
+
+  Widget _buildStatsGrid(int photos, int videos, int today, int deleteQueueCount) {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.5,
+      mainAxisSpacing: 15,
+      crossAxisSpacing: 15,
+      childAspectRatio: 1.25,
       children: [
-        _StatCard(
-          icon: Icons.photo_library_rounded,
-          value: '$photos',
-          label: 'Photos',
-          color: const Color(0xFF71C4D9),
-          gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
+        _animatedCardEntry(
+          index: 0,
+          child: StatsCard(
+            label: 'Photos',
+            value: '$photos',
+            icon: Icons.photo_library_rounded,
+            gradientColors: const [Color(0xFF4A9EFF), Color(0xFF6DB3FF)],
+            onTap: () {
+              HapticFeedback.mediumImpact();
+              _showSnackBar('Opening Photos...');
+            },
+          ),
         ),
-        _StatCard(
-          icon: Icons.videocam_rounded,
-          value: '$videos',
-          label: 'Videos',
-          color: const Color(0xFF71C4D9),
-          gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
+        _animatedCardEntry(
+          index: 1,
+          child: StatsCard(
+            label: 'Videos',
+            value: '$videos',
+            icon: Icons.videocam_rounded,
+            gradientColors: const [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+            onTap: () {
+              HapticFeedback.mediumImpact();
+              _showSnackBar('Opening Videos...');
+            },
+          ),
         ),
-        _StatCard(
-          icon: Icons.today_rounded,
-          value: '$today',
-          label: 'Today',
-          color: const Color(0xFF71C4D9),
-          gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
+        _animatedCardEntry(
+          index: 2,
+          child: StatsCard(
+            label: 'Today',
+            value: '$today',
+            icon: Icons.calendar_today_rounded,
+            gradientColors: const [Color(0xFFFF8A3D), Color(0xFFFFAA6C)],
+            onTap: () {
+              HapticFeedback.mediumImpact();
+              _showSnackBar('Opening Today...');
+            },
+          ),
         ),
-        _StatCard(
-          icon: Icons.delete_sweep_rounded,
-          value: '$deleteQueue',
-          label: 'To Delete',
-          color: const Color(0xFF71C4D9),
-          gradientColors: const [Color(0xFF71C4D9), Color(0xFF5BB8D0)],
+        _animatedCardEntry(
+          index: 3,
+          child: StatsCard(
+            label: 'To Delete',
+            value: '$deleteQueueCount',
+            icon: Icons.delete_rounded,
+            gradientColors: const [Color(0xFFFF5757), Color(0xFFFF7B7B)],
+            onTap: () {
+              HapticFeedback.mediumImpact();
+              _showSnackBar('Opening To Delete...');
+            },
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF86868B),
+        letterSpacing: 0.5,
+      ),
+    );
+  }
+
+  Widget _buildQuickActionsGrid() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _animatedCardEntry(
+                index: 4,
+                child: QuickActionCard(
+                  title: 'Swipe Review',
+                  subtitle: 'Clean photos fast',
+                  icon: Icons.swipe_rounded,
+                  gradientColors: const [Color(0xFFFF6B6B), Color(0xFFFF8E8E)],
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    context.push('/swipe-review');
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: _animatedCardEntry(
+                index: 5,
+                child: QuickActionCard(
+                  title: 'Find Duplicates',
+                  subtitle: 'Remove copies',
+                  icon: Icons.content_copy_rounded,
+                  gradientColors: const [Color(0xFF6B8CFF), Color(0xFF8FA5FF)],
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    context.push('/duplicates');
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 15),
+        Row(
+          children: [
+            Expanded(
+              child: _animatedCardEntry(
+                index: 6,
+                child: QuickActionCard(
+                  title: 'Smart Collections',
+                  subtitle: 'Auto-organized',
+                  icon: Icons.auto_awesome_rounded,
+                  gradientColors: const [Color(0xFF26D9A0), Color(0xFF5AE7BB)],
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    context.push('/smart-collections');
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: _animatedCardEntry(
+                index: 7,
+                child: QuickActionCard(
+                  title: 'Compress Photos',
+                  subtitle: 'Save space',
+                  icon: Icons.compress_rounded,
+                  gradientColors: const [Color(0xFFFF5EC0), Color(0xFFFF85D5)],
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    context.push('/compress-photos');
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStorageOverview() {
+    return _StorageOverviewCard(
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        context.push('/storage-stats');
+      },
+    );
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+}
+
+class _StorageOverviewCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _StorageOverviewCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF1E293B), Color(0xFF334155)],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.storage_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Text(
+                  'Storage Overview',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -256,289 +435,14 @@ class _StatsGridSkeleton extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.9,
-      children: List.generate(4, (_) => const CardSkeleton(
-        height: 60,
-        borderRadius: BorderRadius.all(Radius.circular(16)),
-      )),
-    );
-  }
-}
-
-class _StatCard extends StatefulWidget {
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
-  final List<Color>? gradientColors;
-
-  const _StatCard({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.color,
-    this.gradientColors,
-  });
-
-  @override
-  State<_StatCard> createState() => _StatCardState();
-}
-
-class _StatCardState extends State<_StatCard> with SingleTickerProviderStateMixin {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final gradient = widget.gradientColors ?? [widget.color, widget.color.withValues(alpha: 0.7)];
-    
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedScale(
-        scale: _isPressed ? 0.95 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardTheme.color,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
-            boxShadow: [
-              BoxShadow(
-                color: gradient.first.withValues(alpha: 0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Gradient icon container
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: gradient,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: gradient.first.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Icon(widget.icon, color: Colors.white, size: 20),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      widget.value,
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: Theme.of(context).textTheme.titleLarge?.color,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    widget.label,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(context).textTheme.bodySmall?.color,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _QuickActionCard extends StatefulWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final List<Color> gradientColors;
-  final VoidCallback onTap;
-
-  const _QuickActionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.gradientColors,
-    required this.onTap,
-  });
-
-  @override
-  State<_QuickActionCard> createState() => _QuickActionCardState();
-}
-
-class _QuickActionCardState extends State<_QuickActionCard> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedScale(
-        scale: _isPressed ? 0.95 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardTheme.color,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
-            boxShadow: [
-              BoxShadow(
-                color: widget.gradientColors.first.withValues(alpha: 0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: widget.gradientColors,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: widget.gradientColors.first.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Icon(widget.icon, color: Colors.white, size: 20),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).textTheme.titleMedium?.color,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    widget.subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StorageOverviewCard extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _StorageOverviewCard({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF1A1A2E), Color(0xFF16213E)],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.divider.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.storage_rounded,
-                color: Colors.white,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Storage Overview',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Tap to see detailed breakdown',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              color: Colors.white.withValues(alpha: 0.5),
-            ),
-          ],
+      mainAxisSpacing: 15,
+      crossAxisSpacing: 15,
+      childAspectRatio: 1.25,
+      children: List.generate(
+        4,
+        (_) => const CardSkeleton(
+          height: 130,
+          borderRadius: BorderRadius.all(Radius.circular(20)),
         ),
       ),
     );

@@ -6,11 +6,11 @@ class TrendingIcon extends StatelessWidget {
   final Color iconColor;
 
   const TrendingIcon({
-    Key? key,
+    super.key,
     this.size = 200,
     this.backgroundColor = const Color(0xFF4A9FE8),
     this.iconColor = Colors.white,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

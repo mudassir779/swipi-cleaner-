@@ -92,6 +92,37 @@ class PhotoService {
         filename.startsWith('scr');
   }
 
+  /// Get screenshots from the dedicated album when available.
+  ///
+  /// This is much more reliable than filename heuristics (especially on iOS).
+  Future<List<AssetEntity>> getScreenshots({
+    int page = 0,
+    int size = 100,
+  }) async {
+    final albums = await PhotoManager.getAssetPathList(
+      type: RequestType.image,
+      hasAll: false,
+      onlyAll: false,
+    );
+
+    AssetPathEntity? screenshotsAlbum;
+    for (final a in albums) {
+      final n = a.name.toLowerCase();
+      if (n.contains('screenshot') || n.contains('screen capture') || n.contains('screen captures')) {
+        screenshotsAlbum = a;
+        break;
+      }
+    }
+
+    if (screenshotsAlbum != null) {
+      return await getAssetsFromAlbum(screenshotsAlbum, page: page, size: size);
+    }
+
+    // Fallback: filter recents by heuristic.
+    final recents = await getAllPhotos(page: page, size: size, type: RequestType.image);
+    return recents.where(isScreenshot).toList();
+  }
+
   /// Get creation date
   DateTime? getCreationDate(AssetEntity asset) {
     return asset.createDateTime;
